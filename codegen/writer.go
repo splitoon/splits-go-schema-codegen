@@ -217,7 +217,6 @@ func GetNodeImportStr(s Schema) string {
 		Imports []string
 	}{
 		Imports: []string{
-			"\"splits-go-api/auth/contexts\"",
 			"\"splits-go-api/db/models/base\"",
 			"p \"splits-go-api/db/models/predicates\"",
 		},
@@ -248,7 +247,6 @@ func GetNodeStr(s Schema) string {
 	}
 	template := "// {{.Name}}Node is the base {{.Name}} definition.\n" +
 		"type {{.Name}}Node struct {\n" +
-		"\tViewerContext contexts.ViewerContext\n\n" +
 		"\t// Node fields\n" +
 		"{{range .Fields}} \t{{.CodeName}} {{.Type}}\n{{end}}\n" +
 		"\t// Edges\n" +
@@ -282,9 +280,8 @@ func GetNodeQueryConstructorStr(s Schema) string {
 		VarName: strings.ToLower(string(s.GetName()[0])),
 	}
 	template := "// {{.Name}}Query is the {{.Name}} query constructor.\n" +
-		"func {{.Name}}Query(vc contexts.ViewerContext) *{{.Name}}Q {\n" +
+		"func {{.Name}}Query() *{{.Name}}Q {\n" +
 		"\t{{.VarName}} := new({{.Name}}Q)\n" +
-		"\t{{.VarName}}.ViewerContext = vc\n" +
 		"\t{{.VarName}}.Fields = []p.WhereClauseStruct{}\n" +
 		"\t{{.VarName}}.Return = []p.ReturnClauseStruct{}\n" +
 		"\t{{.VarName}}.IsNode = true\n" +
@@ -362,7 +359,7 @@ func GetNodeQueryEdgesStr(s Schema) string {
 		"// Query{{.CodeName}} traverses the graph to the {{.CodeName}} edge.\n" +
 		"func ({{$.VarName}} *{{$.Name}}Q) Query{{.CodeName}}() *{{.CodeName}}Q " +
 		"{\n" +
-		"\tquery := {{.CodeName}}Query({{$.VarName}}.ViewerContext)\n" +
+		"\tquery := {{.CodeName}}Query()\n" +
 		"\tquery.Prefix = {{$.VarName}}.Prefix + 1\n" +
 		"\tquery.Prev = &{{$.VarName}}.Query\n" +
 		"\t{{$.VarName}}.Next = &query.Query\n" +
@@ -374,7 +371,7 @@ func GetNodeQueryEdgesStr(s Schema) string {
 		"// Query{{.CodeName}} traverses the graph to the {{.CodeName}} edge.\n" +
 		"func ({{$.VarName}} *{{$.Name}}Q) Query{{.CodeName}}() *{{.CodeName}}Q " +
 		"{\n" +
-		"\tquery := {{.CodeName}}Query({{$.VarName}}.ViewerContext)\n" +
+		"\tquery := {{.CodeName}}Query()\n" +
 		"\tquery.Prefix = {{$.VarName}}.Prefix + 1\n" +
 		"\tquery.Prev = &{{$.VarName}}.Query\n" +
 		"\t{{$.VarName}}.Next = &query.Query\n" +
@@ -404,10 +401,9 @@ func GetNodeMutatorStr(s Schema) string {
 
 		// Mutator constructor
 		"// {{.Name}}Mutator is the {{.Name}} mutator constructor.\n" +
-		"func {{.Name}}Mutator(vc contexts.ViewerContext, id string) *{{.Name}}M " +
+		"func {{.Name}}Mutator(id string) *{{.Name}}M " +
 		"{\n" +
 		"\t{{.VarName}} := new({{.Name}}M)\n" +
-		"\t{{.VarName}}.ViewerContext = vc\n" +
 		"\t{{.VarName}}.ID = id\n" +
 		"\t{{.VarName}}.Fields = map[string]interface{}{}\n" +
 		"\t{{.VarName}}.DefaultFields = map[string]interface{}{}\n" +
@@ -458,9 +454,8 @@ func GetNodeDeleterStr(s Schema) string {
 
 		// Deleter constructor
 		"// {{.Name}}Deleter is the {{.Name}} deleter constructor.\n" +
-		"func {{.Name}}Deleter(vc contexts.ViewerContext) *{{.Name}}D {\n" +
+		"func {{.Name}}Deleter() *{{.Name}}D {\n" +
 		"\t{{.VarName}} := new({{.Name}}D)\n" +
-		"\t{{.VarName}}.ViewerContext = vc\n" +
 		"\t{{.VarName}}.Prefix = 'a'\n" +
 		"\t{{.VarName}}.IsNode = true\n" +
 		"\t{{.VarName}}.Fields = []p.WhereClauseStruct{}\n" +
@@ -492,7 +487,7 @@ func GetNodeDeleterStr(s Schema) string {
 		"edge.\n" +
 		"func ({{$.VarName}} *{{$.Name}}D) Delete{{.CodeName}}() *{{.CodeName}}D " +
 		"{\n" +
-		"\tdeleter := {{.CodeName}}Deleter({{$.VarName}}.ViewerContext)\n" +
+		"\tdeleter := {{.CodeName}}Deleter()\n" +
 		"\tdeleter.Prefix = {{$.VarName}}.Prefix + 1\n" +
 		"\tdeleter.Prev = &{{$.VarName}}.Deleter\n" +
 		"\t{{$.VarName}}.Next = &deleter.Deleter\n" +
@@ -505,7 +500,7 @@ func GetNodeDeleterStr(s Schema) string {
 		"edge.\n" +
 		"func ({{$.VarName}} *{{$.Name}}D) Delete{{.CodeName}}() *{{.CodeName}}D " +
 		"{\n" +
-		"\tdeleter:= {{.CodeName}}Deleter({{$.VarName}}.ViewerContext)\n" +
+		"\tdeleter:= {{.CodeName}}Deleter()\n" +
 		"\tdeleter.Prefix = {{$.VarName}}.Prefix + 1\n" +
 		"\tdeleter.Prev = &{{$.VarName}}.Deleter\n" +
 		"\t{{$.VarName}}.Next = &deleter.Deleter\n" +
@@ -550,7 +545,6 @@ func GetEdgeImportStr(e EdgeStruct) string {
 		Imports []string
 	}{
 		Imports: []string{
-			"\"splits-go-api/auth/contexts\"",
 			"\"splits-go-api/db/models/base\"",
 			"p \"splits-go-api/db/models/predicates\"",
 		},
@@ -579,7 +573,6 @@ func GetEdgeStr(e EdgeStruct) string {
 	}
 	template := "// {{.CodeName}}Edge is the base {{.CodeName}} definition.\n" +
 		"type {{.CodeName}}Edge struct {\n" +
-		"\tViewerContext contexts.ViewerContext\n\n" +
 		"\t// Edge fields\n" +
 		"{{range .Fields}} \t{{.CodeName}} {{.Type}}\n{{end}}\n" +
 		"}\n"
@@ -612,9 +605,8 @@ func GetEdgeQueryConstructorStr(e EdgeStruct) string {
 		VarName:  strings.ToLower(string(e.Name[0])),
 	}
 	t := "// {{.CodeName}}Query is the {{.CodeName}} query constructor.\n" +
-		"func {{.CodeName}}Query(vc contexts.ViewerContext) *{{.CodeName}}Q {\n" +
+		"func {{.CodeName}}Query() *{{.CodeName}}Q {\n" +
 		"\t{{.VarName}} := new({{.CodeName}}Q)\n" +
-		"\t{{.VarName}}.ViewerContext = vc\n" +
 		"\t{{.VarName}}.Fields = []p.WhereClauseStruct{}\n" +
 		"\t{{.VarName}}.Return = []p.ReturnClauseStruct{}\n" +
 		"\t{{.VarName}}.IsNode = false\n" +
@@ -689,9 +681,8 @@ func GetEdgeQueryNodesStr(e EdgeStruct) string {
 		DifferentNodes: e.FromNode.GetName() != e.ToNode.GetName(),
 	}
 	t := "// Query{{.FromNode}} traverses the graph to the {{.FromNode}} node." +
-		"\nfunc ({{$.VarName}} *{{$.CodeName}}Q) Query{{.FromNode}}" +
-		"(vc contexts.ViewerContext) " +
-		"*{{.FromNode}}Q {\n\tquery := {{.FromNode}}Query(vc)\n" +
+		"\nfunc ({{$.VarName}} *{{$.CodeName}}Q) Query{{.FromNode}}() " +
+		"*{{.FromNode}}Q {\n\tquery := {{.FromNode}}Query()\n" +
 		"\tquery.Prefix = {{$.VarName}}.Prefix + 1\n" +
 		"\tquery.Prev = &{{$.VarName}}.Query\n" +
 		"\t{{$.VarName}}.Next = &query.Query\n" +
@@ -700,8 +691,8 @@ func GetEdgeQueryNodesStr(e EdgeStruct) string {
 		"{{if .DifferentNodes}}" +
 		"// Query{{.ToNode}} traverses the graph to the {{.ToNode}} node.\n" +
 		"func ({{$.VarName}} *{{$.CodeName}}Q) Query{{.ToNode}}" +
-		"(vc contexts.ViewerContext) *{{.ToNode}}Q {" +
-		"\n\tquery := {{.ToNode}}Query(vc)\n" +
+		"() *{{.ToNode}}Q {" +
+		"\n\tquery := {{.ToNode}}Query()\n" +
 		"\tquery.Prefix = {{$.VarName}}.Prefix + 1\n" +
 		"\tquery.Prev = &{{$.VarName}}.Query\n" +
 		"\t{{$.VarName}}.Next = &query.Query\n" +
@@ -734,10 +725,9 @@ func GetEdgeMutatorStr(e EdgeStruct) string {
 
 		// Mutator constructor
 		"// {{.Name}}Mutator is the {{.Name}} mutator constructor.\n" +
-		"func {{.Name}}Mutator(vc contexts.ViewerContext, id string, " +
+		"func {{.Name}}Mutator(id string, " +
 		"fromID string, toID string) *{{.Name}}M {\n" +
 		"\t{{.VarName}} := new({{.Name}}M)\n" +
-		"\t{{.VarName}}.ViewerContext = vc\n" +
 		"\t{{.VarName}}.ID = id\n" +
 		"\t{{.VarName}}.Fields = map[string]interface{}{}\n" +
 		"\t{{.VarName}}.IsNode = true\n" +
@@ -785,9 +775,8 @@ func GetEdgeDeleterStr(e EdgeStruct) string {
 
 		// Deleter constructor
 		"// {{.Name}}Deleter is the {{.Name}} deleter constructor.\n" +
-		"func {{.Name}}Deleter(vc contexts.ViewerContext) *{{.Name}}D {\n" +
+		"func {{.Name}}Deleter() *{{.Name}}D {\n" +
 		"\t{{.VarName}} := new({{.Name}}D)\n" +
-		"\t{{.VarName}}.ViewerContext = vc\n" +
 		"\t{{.VarName}}.Prefix = 'a'\n" +
 		"\t{{.VarName}}.IsNode = false\n" +
 		"\t{{.VarName}}.Fields = []p.WhereClauseStruct{}\n" +
@@ -818,7 +807,7 @@ func GetEdgeDeleterStr(e EdgeStruct) string {
 		"node.\n" +
 		"func ({{$.VarName}} *{{$.Name}}D) Delete{{.FromNode}}() *{{.FromNode}}D " +
 		"{\n" +
-		"\tdeleter := {{.FromNode}}Deleter({{$.VarName}}.ViewerContext)\n" +
+		"\tdeleter := {{.FromNode}}Deleter()\n" +
 		"\tdeleter.Prefix = {{$.VarName}}.Prefix + 1\n" +
 		"\tdeleter.Prev = &{{$.VarName}}.Deleter\n" +
 		"\t{{$.VarName}}.Next = &deleter.Deleter\n" +
@@ -828,7 +817,7 @@ func GetEdgeDeleterStr(e EdgeStruct) string {
 		"// Delete{{.ToNode}} traverses the deleter to the {{.ToNode}} node.\n" +
 		"func ({{$.VarName}} *{{$.Name}}D) Delete{{.ToNode}}() *{{.ToNode}}D " +
 		"{\n" +
-		"\tdeleter := {{.ToNode}}Deleter({{$.VarName}}.ViewerContext)\n" +
+		"\tdeleter := {{.ToNode}}Deleter()\n" +
 		"\tdeleter.Prefix = {{$.VarName}}.Prefix + 1\n" +
 		"\tdeleter.Prev = &{{$.VarName}}.Deleter\n" +
 		"\t{{$.VarName}}.Next = &deleter.Deleter\n" +
