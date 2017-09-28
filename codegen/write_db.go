@@ -30,6 +30,7 @@ func WriteSchemaNode(s Schema, packageName string) string {
 	sections = append(sections, GetNodeQueryConstructorStr(s))
 	sections = append(sections, GetNodeQueryWhereStr(s))
 	sections = append(sections, GetNodeQueryReturnStr(s))
+	sections = append(sections, GetNodeQueryOrderStr(s))
 	sections = append(sections, GetNodeQueryEdgesStr(s))
 	sections = append(sections, GetNodeMutatorStr(s))
 	sections = append(sections, GetNodeDeleterStr(s))
@@ -61,6 +62,7 @@ func WriteSchemaEdge(s Schema, e EdgeStruct, packageName string) string {
 	sections = append(sections, GetEdgeQueryConstructorStr(e))
 	sections = append(sections, GetEdgeQueryWhereStr(e))
 	sections = append(sections, GetEdgeQueryReturnStr(e))
+	sections = append(sections, GetEdgeQueryOrderStr(e))
 	sections = append(sections, GetEdgeQueryNodesStr(e))
 	sections = append(sections, GetEdgeMutatorStr(e))
 	sections = append(sections, GetEdgeDeleterStr(e))
@@ -336,6 +338,29 @@ func GetNodeQueryReturnStr(s Schema) string {
 		"}\n\n" +
 		"{{end}}"
 	return ExecTemplate(template, "node_query_return", data)
+}
+
+// GetNodeQueryOrderStr generates all the Order clause functions for a node.
+func GetNodeQueryOrderStr(s Schema) string {
+	data := struct {
+		Name    string
+		VarName string
+		Fields  []FieldStruct
+	}{
+		Name:    s.GetName(),
+		VarName: strings.ToLower(string(s.GetName()[0])) + "q",
+		Fields:  s.GetFields(),
+	}
+
+	template := "{{range .Fields}}" +
+		"// OrderBy{{.CodeName}} is the order clause for {{.CodeName}}.\n" +
+		"func ({{$.VarName}} *{{$.Name}}Q) OrderBy{{.CodeName}}() *{{$.Name}}Q {\n" +
+		"{{$.VarName}}.Order = append({{$.VarName}}.Order, p.OrderClause" +
+		"(\"{{.Name}}\"))\n" +
+		"return {{$.VarName}}\n" +
+		"}\n\n" +
+		"{{end}}"
+	return ExecTemplate(template, "node_query_order", data)
 }
 
 // GetNodeQueryEdgesStr generates the Query functions for traversing the graph.
@@ -663,6 +688,29 @@ func GetEdgeQueryReturnStr(e EdgeStruct) string {
 	return ExecTemplate(template, "edge_query_return", data)
 }
 
+// GetEdgeQueryOrderStr generates all the Order clause functions for an edge.
+func GetEdgeQueryOrderStr(e EdgeStruct) string {
+	data := struct {
+		Name    string
+		VarName string
+		Fields  []EdgeFieldStruct
+	}{
+		Name:    e.CodeName,
+		VarName: strings.ToLower(string(e.Name[0])) + "q",
+		Fields:  e.Fields,
+	}
+
+	template := "{{range .Fields}}" +
+		"// OrderBy{{.CodeName}} is the return clause for {{.CodeName}}\n" +
+		"func ({{$.VarName}} *{{$.Name}}Q) OrderBy{{.CodeName}}() *{{$.Name}}Q {\n" +
+		"{{$.VarName}}.Order = append({{$.VarName}}.Order, p.OrderClause" +
+		"(\"{{.Name}}\"))\n" +
+		"return {{$.VarName}}\n" +
+		"}\n\n" +
+		"{{end}}"
+	return ExecTemplate(template, "edge_query_order", data)
+}
+
 // GetEdgeQueryNodesStr generates the Query functions for traversing the graph.
 func GetEdgeQueryNodesStr(e EdgeStruct) string {
 	data := struct {
@@ -730,12 +778,19 @@ func GetEdgeMutatorStr(e EdgeStruct) string {
 		"\t{{.VarName}} := new({{.Name}}M)\n" +
 		"\t{{.VarName}}.ID = id\n" +
 		"\t{{.VarName}}.Fields = map[string]interface{}{}\n" +
+		"\t{{.VarName}}.DefaultFields = map[string]interface{}{}\n" +
 		"\t{{.VarName}}.IsNode = true\n" +
 		"\t{{.VarName}}.FromNode = constants.{{.FromNode}}Label\n" +
 		"\t{{.VarName}}.ToNode = constants.{{.ToNode}}Label\n" +
 		"\t{{.VarName}}.FromID = fromID\n" +
 		"\t{{.VarName}}.ToID = toID\n" +
 		"\t{{.VarName}}.Label = constants.{{.Name}}Label\n" +
+
+		// Default fields
+		"{{range .Fields}}" +
+		"\t{{$.VarName}}.DefaultFields[\"{{.Name}}\"] = {{.DefaultValue}}\n" +
+		"{{end}}" +
+
 		"\treturn {{.VarName}}\n" +
 		"}\n\n" +
 
