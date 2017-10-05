@@ -2,6 +2,8 @@
 
 package codegen
 
+import "splits-go-api/auth/policies"
+
 // FieldStruct holds the internal representation of a schame node.
 type FieldStruct struct {
 	Name         string    // Name of the field (under_scored)
@@ -10,6 +12,7 @@ type FieldStruct struct {
 	DefaultValue string    // Default value for the field (in string form)
 	Unique       bool      // Whether the field be unique
 	Indexed      bool      // Whether the field should have an index on it
+	Privacy      policies.PrivacyPolicy
 }
 
 // Field constructor.
@@ -21,6 +24,7 @@ func Field() *FieldStruct {
 		DefaultValue: "",
 		Unique:       false,
 		Indexed:      false,
+		Privacy:      policies.PrivacyPolicyStruct{},
 	}
 }
 
@@ -57,5 +61,11 @@ func (fs *FieldStruct) SetUnique(unique bool) *FieldStruct {
 // SetIndexed is the indexed setter for a node field.
 func (fs *FieldStruct) SetIndexed(indexed bool) *FieldStruct {
 	fs.Indexed = indexed
+	return fs
+}
+
+// SetPrivacy is the privacy setter for a node field.
+func (fs *FieldStruct) SetPrivacy(pp policies.PrivacyPolicy) *FieldStruct {
+	fs.Privacy = pp
 	return fs
 }

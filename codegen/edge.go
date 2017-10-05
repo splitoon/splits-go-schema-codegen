@@ -2,13 +2,17 @@
 
 package codegen
 
+import "splits-go-api/auth/policies"
+
 // EdgeStruct holds the internal representation of a schame edge.
 type EdgeStruct struct {
-	Name     string            // Label of the edge in neo4j (UPPER_CASE)
-	CodeName string            // Name to be used in generated code (CamelCase)
-	Fields   []EdgeFieldStruct // Fields that belong to the edge
-	FromNode Schema            // Schema of the from node
-	ToNode   Schema            // Schema of the to node
+	Name           string            // Label of the edge in neo4j (UPPER_CASE)
+	CodeName       string            // Name to be used in generated code (CamelCase)
+	Fields         []EdgeFieldStruct // Fields that belong to the edge
+	FromNode       Schema            // Schema of the from node
+	ToNode         Schema            // Schema of the to node
+	Privacy        policies.PrivacyPolicy
+	ReversePrivacy policies.PrivacyPolicy
 }
 
 // Edge constructor.
@@ -19,6 +23,7 @@ func Edge() *EdgeStruct {
 		Fields:   []EdgeFieldStruct{},
 		FromNode: nil,
 		ToNode:   nil,
+		Privacy:  policies.PrivacyPolicyStruct{},
 	}
 }
 
@@ -52,6 +57,18 @@ func (es *EdgeStruct) SetToNode(n Schema) *EdgeStruct {
 	return es
 }
 
+// SetPrivacy is the to privacy setter for an edge.
+func (es *EdgeStruct) SetPrivacy(pp policies.PrivacyPolicy) *EdgeStruct {
+	es.Privacy = pp
+	return es
+}
+
+// SetReversePrivacy is the to reverse privacy setter for an edge.
+func (es *EdgeStruct) SetReversePrivacy(pp policies.PrivacyPolicy) *EdgeStruct {
+	es.ReversePrivacy = pp
+	return es
+}
+
 // EdgeFieldStruct holds the internal representation of a schema edge field.
 type EdgeFieldStruct struct {
 	Name         string    // Name of the property in neo4j (under_scored)
@@ -60,6 +77,7 @@ type EdgeFieldStruct struct {
 	DefaultValue string    // Default value for the field (in string form)
 	Unique       bool      // Whether the field should be unique
 	Indexed      bool      // Whether the field should be indexed
+	Privacy      policies.PrivacyPolicy
 }
 
 // EdgeField constructor.
@@ -71,6 +89,7 @@ func EdgeField() *EdgeFieldStruct {
 		DefaultValue: "",
 		Unique:       false,
 		Indexed:      false,
+		Privacy:      policies.PrivacyPolicyStruct{},
 	}
 }
 
@@ -107,5 +126,11 @@ func (es *EdgeFieldStruct) SetUnique(unique bool) *EdgeFieldStruct {
 // SetIndexed is the indexed setter for an edge field.
 func (es *EdgeFieldStruct) SetIndexed(indexed bool) *EdgeFieldStruct {
 	es.Indexed = indexed
+	return es
+}
+
+// SetPrivacy is the privacy setter for a node field.
+func (es *EdgeFieldStruct) SetPrivacy(pp policies.PrivacyPolicy) *EdgeFieldStruct {
+	es.Privacy = pp
 	return es
 }

@@ -1,7 +1,7 @@
 // Validating that the generated files were untampered. If there are changes,
 // then the code generator will fail so manual changes are not overwritten.
 
-package codegen
+package db
 
 import (
 	"crypto/md5"
@@ -12,10 +12,12 @@ import (
 	"os"
 	"regexp"
 	"strings"
+
+	cg "splits-go-schema-codegen/codegen"
 )
 
-// ValidateSchemas for validating schemas.
-func ValidateSchemas(schemas []Schema, packageName string) (err error) {
+// ValidateDBSchemas for validating schemas.
+func ValidateDBSchemas(schemas []cg.Schema, packageName string) (err error) {
 
 	filesRead := map[string]bool{}
 
