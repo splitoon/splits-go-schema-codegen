@@ -396,6 +396,7 @@ func GetNodeGetByIDStr(s cg.Schema) string {
 	return cg.ExecTemplate(template, "node_by_id", data)
 }
 
+// GetNodeGetByIDBatchStr generates the GetByID batcher
 func GetNodeGetByIDBatchStr(s cg.Schema) string {
 	fields := s.GetFields()
 	pp := map[string]policies.PrivacyPolicy{}
