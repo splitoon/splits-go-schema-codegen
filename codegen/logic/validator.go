@@ -67,6 +67,7 @@ func ValidateLogicSchemas(
 					} else {
 						signature = signature[1 : len(signature)-1]
 					}
+					content = []byte(strings.Replace(string(content), "%s", "%%s", -1))
 					sum := md5.Sum([]byte(content))
 					expectedSignature := hex.EncodeToString([]byte(sum[:]))
 
