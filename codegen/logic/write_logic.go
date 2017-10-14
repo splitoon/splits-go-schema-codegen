@@ -205,8 +205,6 @@ func GetNodeImportStr(s cg.Schema, manualPart string) string {
 		"\t\"sync\"\n" +
 		"\t\"time\"\n" +
 		"\n" +
-		"\tbolt \"github.com/johnnadratowski/golang-neo4j-bolt-driver\"\n" +
-		"\te \"github.com/johnnadratowski/golang-neo4j-bolt-driver/errors\"\n" +
 		cg.StartManual + "\n" +
 		"{{.ManualPart}}\n" +
 		cg.EndManual + "\n" +
@@ -223,7 +221,7 @@ func GetNodeCheckAuthStr(s cg.Schema) string {
 	}
 	template := strings.Join([]string{
 		"func check{{.Name}}Auth(",
-		"\tconn *bolt.Conn,",
+		"\tconn *db.Conn,",
 		"\tvc contexts.ViewerContext,",
 		"\tpp policies.PrivacyPolicy,",
 		"\tparams context.Context,",
@@ -281,7 +279,7 @@ func GetNodeFieldQueryStr(s cg.Schema) string {
 		Fields:   fields,
 	}
 	template := "func create{{.Name}}FieldQuery(\n" +
-		"\tconn *bolt.Conn,\n" +
+		"\tconn *db.Conn,\n" +
 		"\tvc contexts.ViewerContext,\n" +
 		"\tparams context.Context,\n" +
 		"\tid string,\n" +
@@ -349,7 +347,7 @@ func GetNodeGetByIDStr(s cg.Schema) string {
 		"{{.Name}}.\n" +
 		"// If there is insufficient authorization, the field will return null.\n" +
 		"func Get{{.Name}}ByID(\n" +
-		"\tconn *bolt.Conn,\n" +
+		"\tconn *db.Conn,\n" +
 		"\tvc contexts.ViewerContext,\n" +
 		"\tparams context.Context,\n" +
 		"\tid string,\n" +
@@ -372,18 +370,13 @@ func GetNodeGetByIDStr(s cg.Schema) string {
 		"\n" +
 		"\t// Execute the query\n" +
 		"\tvar row []interface{}\n" +
-		"\tnewConn := conn\n" +
 		"\tfor i := 0; row == nil && i < constants.LogicRetryCount; i++ {\n" +
-		"\t\trow, err = q.GenOne(newConn)\n" +
-		"\t\tif _, isBoltErr := err.(*e.Error); isBoltErr {\n" +
-		"\t\t\t// Try a new connection\n" +
-		"\t\t\t(*newConn).Close()\n" +
-		"\t\t\ttime.Sleep(time.Millisecond * constants.LogicRetryWait)\n" +
-		"\t\t\tc, _ := db.GetDriverConn()\n" +
-		"\t\t\tnewConn = c\n" +
-		"\t\t}\n" +
+		"\t\trow, err = q.GenOne(conn)\n" +
+		"\t\t// Try a new connection\n" +
+		"\t\ttime.Sleep(time.Millisecond * constants.LogicRetryWait)\n" +
+		"\t\tconn.Refresh()\n" +
+		"\t\n" +
 		"\t}\n" +
-		"\t*conn = *newConn\n" +
 		"\tif err != nil {\n" +
 		"\t\treturn nil, err\n" +
 		"\t}\n" +
@@ -416,7 +409,7 @@ func GetNodeGetByIDBatchStr(s cg.Schema) string {
 	template := "// Get{{.Name}}ByIDBatcher wraps the Get{{.Name}}ByID request " +
 		"to be batched later.\n" +
 		"func Get{{.Name}}ByIDBatcher(\n" +
-		"\tconn *bolt.Conn,\n" +
+		"\tconn *db.Conn,\n" +
 		"\tvc contexts.ViewerContext,\n" +
 		"\tparams context.Context,\n" +
 		"\tid string,\n" +
@@ -486,7 +479,7 @@ func GetNodeConnectedNodesStr(s cg.Schema) string {
 		"// Get{{$.Name}}{{$value.Name}}s retrieves the ids of connected " +
 		"{{$value.Name}}s.\n" +
 		"func Get{{$.Name}}{{$value.Name}}s(\n" +
-		"\tconn *bolt.Conn,\n" +
+		"\tconn *db.Conn,\n" +
 		"\tvc contexts.ViewerContext,\n" +
 		"\tparams context.Context,\n" +
 		"\tid string,\n" +
@@ -524,7 +517,7 @@ func GetNodeConnectedNodesStr(s cg.Schema) string {
 		"// Get{{$.Name}}{{$value.Name}}sBatcher wraps the Get{{$.Name}}" +
 		"{{$value.Name}}s request to be batched later.\n" +
 		"func Get{{$.Name}}{{$value.Name}}sBatcher(\n" +
-		"\tconn *bolt.Conn,\n" +
+		"\tconn *db.Conn,\n" +
 		"\tvc contexts.ViewerContext,\n" +
 		"\tparams context.Context,\n" +
 		"\tid string,\n" +
@@ -585,8 +578,6 @@ func GetEdgeImportStr(s cg.Schema, manualPart string) string {
 		"\t\"sync\"\n" +
 		"\t\"time\"\n" +
 		"\n" +
-		"\tbolt \"github.com/johnnadratowski/golang-neo4j-bolt-driver\"\n" +
-		"\te \"github.com/johnnadratowski/golang-neo4j-bolt-driver/errors\"\n" +
 		cg.StartManual + "\n" +
 		"{{.ManualPart}}\n" +
 		cg.EndManual + "\n" +
@@ -609,7 +600,7 @@ func GetEdgeCheckAuthStr(s cg.Schema, e cg.EdgeStruct) string {
 	}
 	template := strings.Join([]string{
 		"func check{{.Name}}Auth(",
-		"\tconn *bolt.Conn,",
+		"\tconn *db.Conn,",
 		"\tvc contexts.ViewerContext,",
 		"\tpp policies.PrivacyPolicy,",
 		"\tparams context.Context,",
@@ -677,7 +668,7 @@ func GetEdgeFieldQueryStr(s cg.Schema, e cg.EdgeStruct) string {
 		ToVar:    toVar,
 	}
 	template := "func create{{.Name}}FieldQuery(\n" +
-		"\tconn *bolt.Conn,\n" +
+		"\tconn *db.Conn,\n" +
 		"\tvc contexts.ViewerContext,\n" +
 		"\tparams context.Context,\n" +
 		"\tid string,\n" +
@@ -756,7 +747,7 @@ func GetEdgeGetByIDStr(s cg.Schema, e cg.EdgeStruct) string {
 		"{{.Name}}.\n" +
 		"// If there is insufficient authorization, the field will return null.\n" +
 		"func Get{{.Name}}ByID(\n" +
-		"\tconn *bolt.Conn,\n" +
+		"\tconn *db.Conn,\n" +
 		"\tvc contexts.ViewerContext,\n" +
 		"\tparams context.Context,\n" +
 		"\tid string,\n" +
@@ -798,18 +789,12 @@ func GetEdgeGetByIDStr(s cg.Schema, e cg.EdgeStruct) string {
 		"\n" +
 		"\t// Execute the query\n" +
 		"\trow = nil\n" +
-		"\tnewConn := conn\n" +
 		"\tfor i := 0; row == nil && i < constants.LogicRetryCount; i++ {\n" +
-		"\t\trow, err = q.GenOne(newConn)\n" +
-		"\t\tif _, isBoltErr := err.(*e.Error); isBoltErr {\n" +
-		"\t\t\t// Try a new connection\n" +
-		"\t\t\t(*newConn).Close()\n" +
-		"\t\t\ttime.Sleep(time.Millisecond * constants.LogicRetryWait)\n" +
-		"\t\t\tc, _ := db.GetDriverConn()\n" +
-		"\t\t\tnewConn = c\n" +
-		"\t\t}\n" +
+		"\t\trow, err = q.GenOne(conn)\n" +
+		"\t\t// Try a new connection\n" +
+		"\t\ttime.Sleep(time.Millisecond * constants.LogicRetryWait)\n" +
+		"\t\tconn.Refresh()\n" +
 		"\t}\n" +
-		"\t*conn = *newConn\n" +
 		"\tif err != nil {\n" +
 		"\t\treturn nil, err\n" +
 		"\t}\n" +
@@ -852,7 +837,7 @@ func GetEdgeGetByIDBatcherStr(s cg.Schema, e cg.EdgeStruct) string {
 	template := "// Get{{.Name}}ByIDBatcher wraps the Get{{.Name}}ByID to be " +
 		"batched later.\n" +
 		"func Get{{.Name}}ByIDBatcher(\n" +
-		"\tconn *bolt.Conn,\n" +
+		"\tconn *db.Conn,\n" +
 		"\tvc contexts.ViewerContext,\n" +
 		"\tparams context.Context,\n" +
 		"\tid string,\n" +
@@ -932,7 +917,7 @@ func GetEdgeGetByIDsStr(s cg.Schema, e cg.EdgeStruct) string {
 		"{{.Name}}.\n" +
 		"// If there is insufficient authorization, the field will return null.\n" +
 		"func Get{{.Name}}ByIDs(\n" +
-		"\tconn *bolt.Conn,\n" +
+		"\tconn *db.Conn,\n" +
 		"\tvc contexts.ViewerContext,\n" +
 		"\tparams context.Context,\n" +
 		"\t{{.FromIDVar}} string,\n" +
@@ -974,18 +959,12 @@ func GetEdgeGetByIDsStr(s cg.Schema, e cg.EdgeStruct) string {
 		"\n" +
 		"\t// Execute the query\n" +
 		"\trow = nil\n" +
-		"\tnewConn := conn\n" +
 		"\tfor i := 0; row == nil && i < constants.LogicRetryCount; i++ {\n" +
-		"\t\trow, err = q.GenOne(newConn)\n" +
-		"\t\tif _, isBoltErr := err.(*e.Error); isBoltErr {\n" +
-		"\t\t\t// Try a new connection\n" +
-		"\t\t\t(*newConn).Close()\n" +
-		"\t\t\ttime.Sleep(time.Millisecond * constants.LogicRetryWait)\n" +
-		"\t\t\tc, _ := db.GetDriverConn()\n" +
-		"\t\t\tnewConn = c\n" +
-		"\t\t}\n" +
+		"\t\trow, err = q.GenOne(conn)\n" +
+		"\t\t// Try a new connection\n" +
+		"\t\ttime.Sleep(time.Millisecond * constants.LogicRetryWait)\n" +
+		"\t\tconn.Close()\n" +
 		"\t}\n" +
-		"\t*conn = *newConn\n" +
 		"\tif err != nil {\n" +
 		"\t\treturn nil, err\n" +
 		"\t}\n" +
@@ -1031,7 +1010,7 @@ func GetEdgeGetByIDsBatcherStr(s cg.Schema, e cg.EdgeStruct) string {
 		"batched later.\n" +
 		"// If there is insufficient authorization, the field will return null.\n" +
 		"func Get{{.Name}}ByIDsBatcher(\n" +
-		"\tconn *bolt.Conn,\n" +
+		"\tconn *db.Conn,\n" +
 		"\tvc contexts.ViewerContext,\n" +
 		"\tparams context.Context,\n" +
 		"\t{{.FromIDVar}} string,\n" +
