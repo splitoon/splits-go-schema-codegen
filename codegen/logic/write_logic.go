@@ -49,15 +49,8 @@ func WriteSchemaLogicNode(
 	sections = append(sections, GetNodeGetByIDStr(s))
 	sections = append(sections, GetNodeGetByIDBatchStr(s))
 	sections = append(sections, GetNodeConnectedNodesStr(s))
-	// sections = append(sections, GetNodeStr(s))
-	// sections = append(sections, GetNodeQueryStructStr(s))
-	// sections = append(sections, GetNodeQueryConstructorStr(s))
-	// sections = append(sections, GetNodeQueryWhereStr(s))
-	// sections = append(sections, GetNodeQueryReturnStr(s))
-	// sections = append(sections, GetNodeQueryOrderStr(s))
-	// sections = append(sections, GetNodeQueryEdgesStr(s))
-	// sections = append(sections, GetNodeMutatorStr(s))
-	// sections = append(sections, GetNodeDeleterStr(s))
+	sections = append(sections, GetNodeWriteFieldQueryStr(s))
+	sections = append(sections, GetUpdateNodeGetByIDStr(s))
 	result := strings.Join(sections, "\n")
 	res, err := format.Source([]byte(result))
 	if err != nil {
@@ -103,15 +96,9 @@ func WriteSchemaLogicEdge(
 	sections = append(sections, GetEdgeGetByIDBatcherStr(s, e))
 	sections = append(sections, GetEdgeGetByIDsStr(s, e))
 	sections = append(sections, GetEdgeGetByIDsBatcherStr(s, e))
-	// sections = append(sections, GetNodeStr(s))
-	// sections = append(sections, GetNodeQueryStructStr(s))
-	// sections = append(sections, GetNodeQueryConstructorStr(s))
-	// sections = append(sections, GetNodeQueryWhereStr(s))
-	// sections = append(sections, GetNodeQueryReturnStr(s))
-	// sections = append(sections, GetNodeQueryOrderStr(s))
-	// sections = append(sections, GetNodeQueryEdgesStr(s))
-	// sections = append(sections, GetNodeMutatorStr(s))
-	// sections = append(sections, GetNodeDeleterStr(s))
+	sections = append(sections, GetEdgeWriteFieldQueryStr(s, e))
+	sections = append(sections, GetUpdateEdgeGetByIDStr(s, e))
+	sections = append(sections, GetUpdateEdgeGetByIDsStr(s, e))
 	result := strings.Join(sections, "\n")
 	res, err := format.Source([]byte(result))
 	if err != nil {
@@ -190,7 +177,6 @@ func GetNodeImportStr(s cg.Schema, manualPart string) string {
 		ManualPart: manualPart,
 	}
 	template := "import (\n" +
-		"\t\"errors\"\n" +
 		"\t\"splits-go-api/auth/contexts\"\n" +
 		"\t\"splits-go-api/auth/policies\"\n" +
 		"\t\"splits-go-api/constants\"\n" +
@@ -198,10 +184,12 @@ func GetNodeImportStr(s cg.Schema, manualPart string) string {
 		"\t\"splits-go-api/db\"\n" +
 		"\t\"splits-go-api/db/models\"\n" +
 		"\tp \"splits-go-api/db/models/predicates\"\n" +
+		"\t\"splits-go-api/log\"\n" +
 		"\t\"splits-go-api/logic/privacy\"\n" +
 		"\t\"splits-go-api/logic/util\"\n" +
 		"\n" +
 		"\t\"context\"\n" +
+		"\t\"errors\"\n" +
 		"\t\"sync\"\n" +
 		"\t\"time\"\n" +
 		"\n" +
@@ -262,7 +250,7 @@ func GetNodeCheckAuthStr(s cg.Schema) string {
 }
 
 // GetNodeFieldQueryStr creates a function that generates a query for the
-// sppecified fields.
+// specified fields.
 func GetNodeFieldQueryStr(s cg.Schema) string {
 	fields := s.GetFields()
 	pp := map[string]policies.PrivacyPolicy{}
@@ -445,26 +433,33 @@ func GetNodeGetByIDBatchStr(s cg.Schema) string {
 func GetNodeConnectedNodesStr(s cg.Schema) string {
 
 	type NamePrivacyPair struct {
-		Name    string
-		Privacy policies.PrivacyPolicy
+		Name      string
+		QueryName string
+		Privacy   policies.PrivacyPolicy
 	}
 
 	// Extract the edge name to the node name
 	edges := map[string]NamePrivacyPair{}
 	for _, e := range s.GetEdges() {
 		if e.ToNode.GetName() == s.GetName() { // group->user
-			edges[e.CodeName] = NamePrivacyPair{e.FromNode.GetName(),
+			edges[e.CodeName] = NamePrivacyPair{e.BackwardsName,
+				e.FromNode.GetName(),
 				e.ReversePrivacy}
 		} else if e.FromNode.GetName() == s.GetName() {
-			edges[e.CodeName] = NamePrivacyPair{e.ToNode.GetName(), e.Privacy}
+			edges[e.CodeName] = NamePrivacyPair{e.ForwardsName,
+				e.ToNode.GetName(),
+				e.Privacy}
 		}
 	}
 	for _, e := range s.GetEdgePointers() {
 		if e.ToNode.GetName() == s.GetName() { // group->user
-			edges[e.CodeName] = NamePrivacyPair{e.FromNode.GetName(),
+			edges[e.CodeName] = NamePrivacyPair{e.BackwardsName,
+				e.FromNode.GetName(),
 				e.ReversePrivacy}
 		} else if e.FromNode.GetName() == s.GetName() {
-			edges[e.CodeName] = NamePrivacyPair{e.ToNode.GetName(), e.Privacy}
+			edges[e.CodeName] = NamePrivacyPair{e.ForwardsName,
+				e.ToNode.GetName(),
+				e.Privacy}
 		}
 	}
 
@@ -476,9 +471,9 @@ func GetNodeConnectedNodesStr(s cg.Schema) string {
 		EdgeToNode: edges,
 	}
 	template := "{{range $edgeName, $value := .EdgeToNode}}" +
-		"// Get{{$.Name}}{{$value.Name}}s retrieves the ids of connected " +
+		"// Get{{$.Name}}{{$value.Name}} retrieves the ids of connected " +
 		"{{$value.Name}}s.\n" +
-		"func Get{{$.Name}}{{$value.Name}}s(\n" +
+		"func Get{{$.Name}}{{$value.Name}}(\n" +
 		"\tconn *db.Conn,\n" +
 		"\tvc contexts.ViewerContext,\n" +
 		"\tparams context.Context,\n" +
@@ -500,7 +495,7 @@ func GetNodeConnectedNodesStr(s cg.Schema) string {
 		"\trows, stmt, err := models.{{$.Name}}Query().\n" +
 		"\t\tWhereID(p.Equals(id)).\n" +
 		"\t\tQuery{{$edgeName}}().\n" +
-		"\t\tQuery{{$value.Name}}().\n" +
+		"\t\tQuery{{$value.QueryName}}().\n" +
 		"\t\tReturnID().\n" +
 		"\t\tGen(conn)\n" +
 		"\n" +
@@ -514,9 +509,9 @@ func GetNodeConnectedNodesStr(s cg.Schema) string {
 		"\tids, err := util.ExtractFirstFromRows(rows)\n" +
 		"\treturn ids, err\n" +
 		"}\n\n" +
-		"// Get{{$.Name}}{{$value.Name}}sBatcher wraps the Get{{$.Name}}" +
+		"// Get{{$.Name}}{{$value.Name}}Batcher wraps the Get{{$.Name}}" +
 		"{{$value.Name}}s request to be batched later.\n" +
-		"func Get{{$.Name}}{{$value.Name}}sBatcher(\n" +
+		"func Get{{$.Name}}{{$value.Name}}Batcher(\n" +
 		"\tconn *db.Conn,\n" +
 		"\tvc contexts.ViewerContext,\n" +
 		"\tparams context.Context,\n" +
@@ -537,7 +532,7 @@ func GetNodeConnectedNodesStr(s cg.Schema) string {
 		"\tq := models.{{$.Name}}Query().\n" +
 		"\t\tWhereID(p.Equals(id)).\n" +
 		"\t\tQuery{{$edgeName}}().\n" +
-		"\t\tQuery{{$value.Name}}().\n" +
+		"\t\tQuery{{$value.QueryName}}().\n" +
 		"\t\tReturnID()\n" +
 		"\n" +
 		"\tbatcher := new(util.LogicGetWrapper)\n" +
@@ -550,6 +545,121 @@ func GetNodeConnectedNodesStr(s cg.Schema) string {
 		"{{end}}"
 
 	return cg.ExecTemplate(template, "node_connected_nodes", data)
+}
+
+// GetNodeWriteFieldQueryStr creates a function that generates a query for the
+// modifying specified fields.
+func GetNodeWriteFieldQueryStr(s cg.Schema) string {
+	fields := s.GetFields()
+	pp := map[string]policies.PrivacyPolicy{}
+	for _, x := range fields {
+		pp[x.WritePrivacy.GetName()] = x.WritePrivacy
+	}
+	data := struct {
+		Name     string
+		Policies map[string]policies.PrivacyPolicy
+		Fields   []cg.FieldStruct
+	}{
+		Name:     s.GetName(),
+		Policies: pp,
+		Fields:   fields,
+	}
+	template := "func create{{.Name}}WriteFieldQuery(\n" +
+		"\tconn *db.Conn,\n" +
+		"\tvc contexts.ViewerContext,\n" +
+		"\tparams context.Context,\n" +
+		"\tid string,\n" +
+		"\tfields map[string]interface{},\n" +
+		"\tq *models.{{.Name}}M,\n" +
+		") (*models.{{.Name}}M, []string, error) {\n" +
+		"\n" +
+		"\t// Keep track of the fields actually mutated\n" +
+		"\tmutatedFields := []string{}\n" +
+		"\n" +
+		"\t// Add the fields to the query if appropriate auth\n" +
+		"\tfor field, x := range fields {\n" +
+		"\t\tswitch field {\n\n" +
+		"{{range .Fields}}" +
+		"\t\tcase \"{{.Name}}\":\n" +
+		"\t\t\t{\n" +
+		"\t\t\t\thasAuth, err := check{{$.Name}}Auth(conn, vc, " +
+		"privacy.{{.Privacy.GetName}}, params, id)\n" +
+		"\t\t\t\tif err != nil {\n" +
+		"\t\t\t\t\treturn nil, nil, err\n" +
+		"\t\t\t\t}\n" +
+		"\t\t\t\tif hasAuth {\n" +
+		"\t\t\t\t\tq = q.Set{{.CodeName}}(x.({{.Type}}))\n" +
+		"\t\t\t\t\tmutatedFields = append(mutatedFields, field)\n" +
+		"\t\t\t\t}\n" +
+		"\t\t\t}\n" +
+		"{{end}}" +
+		"\t\tdefault:\n" +
+		"\t\t\t{\n" +
+		"\t\t\t\tlog.Warnf(\"invalid requested field: %%s-%%s\", \"{{$.Name}}\", " +
+		"x)\n" +
+		"\t\t\t}\n" +
+		"\t\t}\n" +
+		"\t}\n" +
+		"\treturn q, mutatedFields, nil\n" +
+		"}\n"
+	return cg.ExecTemplate(template, "node_write_field_query", data)
+}
+
+// GetUpdateNodeGetByIDStr gets the function that updates fields by the id of
+// the node.
+func GetUpdateNodeGetByIDStr(s cg.Schema) string {
+
+	fields := s.GetFields()
+	pp := map[string]policies.PrivacyPolicy{}
+	for _, x := range fields {
+		pp[x.WritePrivacy.GetName()] = x.WritePrivacy
+	}
+
+	data := struct {
+		Name     string
+		Policies map[string]policies.PrivacyPolicy
+		Fields   []cg.FieldStruct
+	}{
+		Name:     s.GetName(),
+		Policies: pp,
+		Fields:   fields,
+	}
+	template := "// Update{{.Name}}ByID updates the fields of a specific " +
+		"{{.Name}}.\n" +
+		"// If there is insufficient authorization, the field will not be " +
+		"returned.\n" +
+		"func Update{{.Name}}ByID(\n" +
+		"\tconn *db.Conn,\n" +
+		"\tvc contexts.ViewerContext,\n" +
+		"\tparams context.Context,\n" +
+		"\tid string,\n" +
+		"\tfields map[string]interface{},\n" +
+		") ([]string, error) {\n" +
+		"\n" +
+		"\t// Generate the query\n" +
+		"\tq := models.{{.Name}}Mutator(id)\n" +
+		"\tq, mutatedFields, err := create{{.Name}}WriteFieldQuery(conn, vc, " +
+		"params, id, " +
+		"fields, q)\n" +
+		"\tif err != nil {\n" +
+		"\t return nil, err\n" +
+		"\t}\n" +
+		"\n" +
+		"\t// Execute the query\n" +
+		"\tvar row interface{}\n" +
+		"\tfor i := 0; row == nil && i < constants.LogicRetryCount; i++ {\n" +
+		"\t\trow, _, err = q.Gen(conn)\n" +
+		"\t\t// Try a new connection\n" +
+		"\t\ttime.Sleep(time.Millisecond * constants.LogicRetryWait)\n" +
+		"\t\tconn.Refresh()\n" +
+		"\t}\n" +
+		"\tif err != nil {\n" +
+		"\t\treturn nil, err\n" +
+		"\t}\n" +
+		"\n" +
+		"\treturn mutatedFields, nil\n" +
+		"}\n"
+	return cg.ExecTemplate(template, "node_write_by_id", data)
 }
 
 // =============================================================================
@@ -571,10 +681,12 @@ func GetEdgeImportStr(s cg.Schema, manualPart string) string {
 		"\t\"splits-go-api/db\"\n" +
 		"\t\"splits-go-api/db/models\"\n" +
 		"\tp \"splits-go-api/db/models/predicates\"\n" +
+		"\t\"splits-go-api/log\"\n" +
 		"\t\"splits-go-api/logic/privacy\"\n" +
 		"\t\"splits-go-api/logic/util\"\n" +
 		"\n" +
 		"\t\"context\"\n" +
+		"\t\"errors\"\n" +
 		"\t\"sync\"\n" +
 		"\t\"time\"\n" +
 		"\n" +
@@ -644,7 +756,7 @@ func GetEdgeCheckAuthStr(s cg.Schema, e cg.EdgeStruct) string {
 }
 
 // GetEdgeFieldQueryStr creates a function that generates a query for the
-// sppecified fields.
+// specified fields.
 func GetEdgeFieldQueryStr(s cg.Schema, e cg.EdgeStruct) string {
 	fields := e.Fields
 	pp := map[string]policies.PrivacyPolicy{}
@@ -1054,4 +1166,243 @@ func GetEdgeGetByIDsBatcherStr(s cg.Schema, e cg.EdgeStruct) string {
 		"\treturn batcher, nil\n" +
 		"}\n"
 	return cg.ExecTemplate(template, "edge_by_ids_batcher", data)
+}
+
+// GetEdgeWriteFieldQueryStr creates a function that generates a query for the
+// updating of fields.
+func GetEdgeWriteFieldQueryStr(s cg.Schema, e cg.EdgeStruct) string {
+	fields := e.Fields
+	pp := map[string]policies.PrivacyPolicy{}
+	for _, x := range fields {
+		pp[x.WritePrivacy.GetName()] = x.WritePrivacy
+	}
+	fromVar := strings.ToLower(string(e.FromNode.GetName()[0])) + "id"
+	toVar := strings.ToLower(string(e.ToNode.GetName()[0])) + "id"
+
+	data := struct {
+		Name     string
+		Policies map[string]policies.PrivacyPolicy
+		Fields   []cg.EdgeFieldStruct
+		FromVar  string
+		ToVar    string
+	}{
+		Name:     e.CodeName,
+		Policies: pp,
+		Fields:   fields,
+		FromVar:  fromVar,
+		ToVar:    toVar,
+	}
+	template := "func create{{.Name}}WriteFieldQuery(\n" +
+		"\tconn *db.Conn,\n" +
+		"\tvc contexts.ViewerContext,\n" +
+		"\tparams context.Context,\n" +
+		"\tid string,\n" +
+		"\t{{.FromVar}} string,\n" +
+		"\t{{.ToVar}} string,\n" +
+		"\tfields map[string]interface{},\n" +
+		"\tq *models.{{.Name}}M,\n" +
+		") (*models.{{.Name}}M, []string, error) {\n" +
+		"\n" +
+		"\t// Keep track of the mutated fields\n" +
+		"\tmutatedFields := []string{}\n" +
+		"\n" +
+		"\t// Add the fields to the query if appropriate auth\n" +
+		"\tfor field, x := range fields {\n" +
+		"\t\tswitch field {\n\n" +
+		"{{range .Fields}}" +
+		"\t\tcase \"{{.Name}}\":\n" +
+		"\t\t\t{\n" +
+		"\t\t\t\thasAuth, err := check{{$.Name}}Auth(\n\t\tconn,\n\t\tvc, " +
+		"\n\t\tprivacy.{{.Privacy.GetName}},\n\t\tparams,\n\t\t{{$.FromVar}}, " +
+		"\n\t\t{{$.ToVar}},\n)\n" +
+		"\t\t\t\tif err != nil {\n" +
+		"\t\t\t\t\treturn nil, nil, err\n" +
+		"\t\t\t\t}\n" +
+		"\t\t\t\tif hasAuth {\n" +
+		"\t\t\t\t\tq = q.Set{{.CodeName}}(x.({{.Type}}))\n" +
+		"\t\t\t\t}\n" +
+		"\t\t\t}\n" +
+		"{{end}}" +
+		"\t\tdefault:\n" +
+		"\t\t\t{\n" +
+		"\t\t\t\tlog.Warnf(\"invalid requested field: %%s-%%s\", \"{{$.Name}}\", " +
+		"x)\n" +
+		"\t\t\t}\n" +
+		"\t\t}\n" +
+		"\t}\n" +
+		"\treturn q, mutatedFields, nil\n" +
+		"}\n"
+	return cg.ExecTemplate(template, "edge_write_field_query", data)
+}
+
+// GetUpdateEdgeGetByIDStr generates the the function that updates edge fields.
+func GetUpdateEdgeGetByIDStr(s cg.Schema, e cg.EdgeStruct) string {
+	fields := e.Fields
+	pp := map[string]policies.PrivacyPolicy{}
+	for _, x := range fields {
+		pp[x.WritePrivacy.GetName()] = x.WritePrivacy
+	}
+	fromVar := strings.ToLower(string(e.FromNode.GetName()[0])) + "id"
+	toVar := strings.ToLower(string(e.ToNode.GetName()[0])) + "id"
+
+	data := struct {
+		Name     string
+		Policies map[string]policies.PrivacyPolicy
+		Fields   []cg.EdgeFieldStruct
+		From     string
+		To       string
+		FromVar  string
+		ToVar    string
+	}{
+		Name:     e.CodeName,
+		Policies: pp,
+		Fields:   fields,
+		From:     e.FromNode.GetName(),
+		To:       e.ToNode.GetName(),
+		FromVar:  fromVar,
+		ToVar:    toVar,
+	}
+	template := "// Update{{.Name}}ByID updates the fields of a specific " +
+		"{{.Name}}.\n" +
+		"// If there is insufficient authorization, the field will not be " +
+		"mutated\n" +
+		"func Update{{.Name}}ByID(\n" +
+		"\tconn *db.Conn,\n" +
+		"\tvc contexts.ViewerContext,\n" +
+		"\tparams context.Context,\n" +
+		"\tid string,\n" +
+		"\tfields map[string]interface{},\n" +
+		") ([]string, error) {\n" +
+		"\n" +
+		"\t// Find the {{.FromVar}} and {{.ToVar}}\n" +
+		"\trow, err := models.{{.From}}Query().\n" +
+		"\t\tReturnID().\n" +
+		"\t\tQuery{{.Name}}().\n" +
+		"\t\tWhereID(p.Equals(id)).\n" +
+		"\t\tQuery{{.To}}().\n" +
+		"\t\tReturnID().\n" +
+		"\t\tGenOne(conn)\n" +
+		"\n" +
+		"\tif err != nil {\n" +
+		"\t\treturn nil, err\n" +
+		"\t}\n" +
+		"\tif row == nil || row[0] == nil || row[1] == nil {\n" +
+		"\t\treturn nil, errors.New(\"no such edges\")\n" +
+		"\t}\n" +
+		"\t{{.FromVar}} := row[0].(string)\n" +
+		"\t{{.ToVar}} := row[1].(string)\n" +
+		"\n" +
+		"\t// Create the query\n" +
+		"\tq := models.{{.Name}}Mutator(id, {{.FromVar}}, {{.ToVar}})\n" +
+		"\tq, mutatedFields, err := create{{.Name}}WriteFieldQuery(\n\t\tconn," +
+		"\n\t\tvc, " +
+		"\n\t\tparams,\n\t\tid,\n\t\t{{.FromVar}},\n\t\t{{.ToVar}},\n\t\tfields, " +
+		"\n\t\tq,\n)\n" +
+		"\tif err != nil {\n" +
+		"\t return nil, err\n" +
+		"\t}\n" +
+		"\n" +
+		"\t// Execute the query\n" +
+		"\tvar row2 interface{}\n" +
+		"\tfor i := 0; row2 == nil && i < constants.LogicRetryCount; i++ {\n" +
+		"\t\trow2, _, err = q.Gen(conn)\n" +
+		"\t\t// Try a new connection\n" +
+		"\t\ttime.Sleep(time.Millisecond * constants.LogicRetryWait)\n" +
+		"\t\tconn.Refresh()\n" +
+		"\t}\n" +
+		"\tif err != nil {\n" +
+		"\t\treturn nil, err\n" +
+		"\t}\n" +
+		"\n" +
+		"\treturn mutatedFields, nil\n" +
+		"}\n"
+	return cg.ExecTemplate(template, "edge_write_by_id", data)
+}
+
+// GetUpdateEdgeGetByIDsStr generates the function that updates fields on an
+// edge.
+func GetUpdateEdgeGetByIDsStr(s cg.Schema, e cg.EdgeStruct) string {
+
+	fields := e.Fields
+	pp := map[string]policies.PrivacyPolicy{}
+	for _, x := range fields {
+		pp[x.WritePrivacy.GetName()] = x.WritePrivacy
+	}
+	fromIDVar := strings.ToLower(string(e.FromNode.GetName()[0])) + "id"
+	toIDVar := strings.ToLower(string(e.ToNode.GetName()[0])) + "id"
+	fromNode := e.FromNode.GetName()
+	toNode := e.ToNode.GetName()
+
+	data := struct {
+		Name      string
+		Policies  map[string]policies.PrivacyPolicy
+		Fields    []cg.EdgeFieldStruct
+		FromIDVar string
+		ToIDVar   string
+		FromNode  string
+		ToNode    string
+	}{
+		Name:      e.CodeName,
+		Policies:  pp,
+		Fields:    fields,
+		FromIDVar: fromIDVar,
+		ToIDVar:   toIDVar,
+		FromNode:  fromNode,
+		ToNode:    toNode,
+	}
+	template := "// Update{{.Name}}ByIDs updates the fields of a specific " +
+		"{{.Name}}.\n" +
+		"// If there is insufficient authorization, the field will not be " +
+		"mutated.\n" +
+		"func Update{{.Name}}ByIDs(\n" +
+		"\tconn *db.Conn,\n" +
+		"\tvc contexts.ViewerContext,\n" +
+		"\tparams context.Context,\n" +
+		"\t{{.FromIDVar}} string,\n" +
+		"\t{{.ToIDVar}} string,\n" +
+		"\tfields map[string]interface{},\n" +
+		") ([]string, error) {\n" +
+		"\n" +
+		"\t// Find the ID\n" +
+		"\trow, err := models.{{.FromNode}}Query().\n" +
+		"\t\tWhereID(p.Equals({{.FromIDVar}})).\n" +
+		"\t\tQuery{{.Name}}().\n" +
+		"\t\tReturnID().\n" +
+		"\t\tQuery{{.ToNode}}().\n" +
+		"\t\tWhereID(p.Equals({{.ToIDVar}})).\n" +
+		"\t\tGenOne(conn)\n" +
+		"\n" +
+		"\tif err != nil {\n" +
+		"\t\treturn nil, err\n" +
+		"\t}\n" +
+		"\tif row == nil || row[0] == nil {\n" +
+		"\t\treturn nil, errors.New(\"no such edge\")\n" +
+		"\t}\n" +
+		"\tid := row[0].(string)\n" +
+		"\n" +
+		"\t// Create the query\n" +
+		"\tq := models.{{.Name}}Mutator(id, {{.FromIDVar}}, {{.ToIDVar}})\n" +
+		"\tq, mutatedFields, err := create{{.Name}}WriteFieldQuery(\n\t\tconn," +
+		"\n\t\tvc, " +
+		"\n\t\tparams,\n\t\tid,\n\t\t{{$.FromIDVar}},\n\t\t{{$.ToIDVar}}, " +
+		"\n\t\tfields,\n\t\tq,\n)\n" +
+		"\tif err != nil {\n" +
+		"\t return nil, err\n" +
+		"\t}\n" +
+		"\n" +
+		"\t// Execute the query\n" +
+		"\tvar row2 interface{}\n" +
+		"\tfor i := 0; row2 == nil && i < constants.LogicRetryCount; i++ {\n" +
+		"\t\trow2, _, err = q.Gen(conn)\n" +
+		"\t\t// Try a new connection\n" +
+		"\t\ttime.Sleep(time.Millisecond * constants.LogicRetryWait)\n" +
+		"\t\tconn.Close()\n" +
+		"\t}\n" +
+		"\tif err != nil {\n" +
+		"\t\treturn nil, err\n" +
+		"\t}\n" +
+		"\n" +
+		"\treturn mutatedFields, nil\n" +
+		"}\n"
+	return cg.ExecTemplate(template, "edge_write_by_ids", data)
 }

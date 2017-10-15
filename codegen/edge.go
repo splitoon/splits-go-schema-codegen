@@ -7,23 +7,30 @@ import "splits-go-api/auth/policies"
 // EdgeStruct holds the internal representation of a schame edge.
 type EdgeStruct struct {
 	Name           string            // Label of the edge in neo4j (UPPER_CASE)
-	CodeName       string            // Name to be used in generated code (CamelCase)
+	CodeName       string            // Name to be used in generated code CmC
 	Fields         []EdgeFieldStruct // Fields that belong to the edge
 	FromNode       Schema            // Schema of the from node
 	ToNode         Schema            // Schema of the to node
+	ForwardsName   string
+	BackwardsName  string
 	Privacy        policies.PrivacyPolicy
 	ReversePrivacy policies.PrivacyPolicy
+	WritePrivacy   policies.PrivacyPolicy
 }
 
 // Edge constructor.
 func Edge() *EdgeStruct {
 	return &EdgeStruct{
-		Name:     "",
-		CodeName: "",
-		Fields:   []EdgeFieldStruct{},
-		FromNode: nil,
-		ToNode:   nil,
-		Privacy:  policies.PrivacyPolicyStruct{},
+		Name:           "",
+		CodeName:       "",
+		Fields:         []EdgeFieldStruct{},
+		FromNode:       nil,
+		ToNode:         nil,
+		ForwardsName:   "",
+		BackwardsName:  "",
+		Privacy:        policies.PrivacyPolicyStruct{},
+		ReversePrivacy: policies.PrivacyPolicyStruct{},
+		WritePrivacy:   policies.PrivacyPolicyStruct{},
 	}
 }
 
@@ -57,6 +64,18 @@ func (es *EdgeStruct) SetToNode(n Schema) *EdgeStruct {
 	return es
 }
 
+// SetForwardsName is the forwards name setter for an edge.
+func (es *EdgeStruct) SetForwardsName(n string) *EdgeStruct {
+	es.ForwardsName = n
+	return es
+}
+
+// SetBackwardsName is the backwards name setter for an edge.
+func (es *EdgeStruct) SetBackwardsName(n string) *EdgeStruct {
+	es.BackwardsName = n
+	return es
+}
+
 // SetPrivacy is the to privacy setter for an edge.
 func (es *EdgeStruct) SetPrivacy(pp policies.PrivacyPolicy) *EdgeStruct {
 	es.Privacy = pp
@@ -71,25 +90,29 @@ func (es *EdgeStruct) SetReversePrivacy(pp policies.PrivacyPolicy) *EdgeStruct {
 
 // EdgeFieldStruct holds the internal representation of a schema edge field.
 type EdgeFieldStruct struct {
-	Name         string    // Name of the property in neo4j (under_scored)
-	CodeName     string    // Name to be used in generated code (CamelCase)
-	Type         FieldType // The type for the field (valid ones in types.go)
-	DefaultValue string    // Default value for the field (in string form)
-	Unique       bool      // Whether the field should be unique
-	Indexed      bool      // Whether the field should be indexed
-	Privacy      policies.PrivacyPolicy
+	Name          string    // Name of the property in neo4j (under_scored)
+	CodeName      string    // Name to be used in generated code (CamelCase)
+	Type          FieldType // The type for the field (valid ones in types.go)
+	DefaultValue  string    // Default value for the field (in string form)
+	Unique        bool      // Whether the field should be unique
+	Indexed       bool      // Whether the field should be indexed
+	Privacy       policies.PrivacyPolicy
+	WritePrivacy  policies.PrivacyPolicy
+	RWritePrivacy policies.PrivacyPolicy
 }
 
 // EdgeField constructor.
 func EdgeField() *EdgeFieldStruct {
 	return &EdgeFieldStruct{
-		Name:         "",
-		CodeName:     "",
-		Type:         "",
-		DefaultValue: "",
-		Unique:       false,
-		Indexed:      false,
-		Privacy:      policies.PrivacyPolicyStruct{},
+		Name:          "",
+		CodeName:      "",
+		Type:          "",
+		DefaultValue:  "",
+		Unique:        false,
+		Indexed:       false,
+		Privacy:       policies.PrivacyPolicyStruct{},
+		WritePrivacy:  policies.PrivacyPolicyStruct{},
+		RWritePrivacy: policies.PrivacyPolicyStruct{},
 	}
 }
 
@@ -129,8 +152,18 @@ func (es *EdgeFieldStruct) SetIndexed(indexed bool) *EdgeFieldStruct {
 	return es
 }
 
-// SetPrivacy is the privacy setter for a node field.
-func (es *EdgeFieldStruct) SetPrivacy(pp policies.PrivacyPolicy) *EdgeFieldStruct {
+// SetPrivacy is the privacy setter for an edge field.
+func (es *EdgeFieldStruct) SetPrivacy(
+	pp policies.PrivacyPolicy,
+) *EdgeFieldStruct {
 	es.Privacy = pp
+	return es
+}
+
+// SetWritePrivacy is the privacy setter for writing an edge field.
+func (es *EdgeFieldStruct) SetWritePrivacy(
+	pp policies.PrivacyPolicy,
+) *EdgeFieldStruct {
+	es.WritePrivacy = pp
 	return es
 }
