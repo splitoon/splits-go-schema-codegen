@@ -253,18 +253,12 @@ func GetNodeCheckAuthStr(s cg.Schema) string {
 // specified fields.
 func GetNodeFieldQueryStr(s cg.Schema) string {
 	fields := s.GetFields()
-	pp := map[string]policies.PrivacyPolicy{}
-	for _, x := range fields {
-		pp[x.Privacy.GetName()] = x.Privacy
-	}
 	data := struct {
-		Name     string
-		Policies map[string]policies.PrivacyPolicy
-		Fields   []cg.FieldStruct
+		Name   string
+		Fields []cg.FieldStruct
 	}{
-		Name:     s.GetName(),
-		Policies: pp,
-		Fields:   fields,
+		Name:   s.GetName(),
+		Fields: fields,
 	}
 	template := "func create{{.Name}}FieldQuery(\n" +
 		"\tconn *db.Conn,\n" +
@@ -315,21 +309,13 @@ func GetNodeFieldQueryStr(s cg.Schema) string {
 // GetNodeGetByIDStr gets the function that retrieves fields by the id of the
 // node.
 func GetNodeGetByIDStr(s cg.Schema) string {
-
 	fields := s.GetFields()
-	pp := map[string]policies.PrivacyPolicy{}
-	for _, x := range fields {
-		pp[x.Privacy.GetName()] = x.Privacy
-	}
-
 	data := struct {
-		Name     string
-		Policies map[string]policies.PrivacyPolicy
-		Fields   []cg.FieldStruct
+		Name   string
+		Fields []cg.FieldStruct
 	}{
-		Name:     s.GetName(),
-		Policies: pp,
-		Fields:   fields,
+		Name:   s.GetName(),
+		Fields: fields,
 	}
 	template := "// Get{{.Name}}ByID retrives the fields of a specific " +
 		"{{.Name}}.\n" +
@@ -380,19 +366,12 @@ func GetNodeGetByIDStr(s cg.Schema) string {
 // GetNodeGetByIDBatchStr generates the GetByID batcher
 func GetNodeGetByIDBatchStr(s cg.Schema) string {
 	fields := s.GetFields()
-	pp := map[string]policies.PrivacyPolicy{}
-	for _, x := range fields {
-		pp[x.Privacy.GetName()] = x.Privacy
-	}
-
 	data := struct {
-		Name     string
-		Policies map[string]policies.PrivacyPolicy
-		Fields   []cg.FieldStruct
+		Name   string
+		Fields []cg.FieldStruct
 	}{
-		Name:     s.GetName(),
-		Policies: pp,
-		Fields:   fields,
+		Name:   s.GetName(),
+		Fields: fields,
 	}
 	template := "// Get{{.Name}}ByIDBatcher wraps the Get{{.Name}}ByID request " +
 		"to be batched later.\n" +
@@ -551,18 +530,12 @@ func GetNodeConnectedNodesStr(s cg.Schema) string {
 // modifying specified fields.
 func GetNodeWriteFieldQueryStr(s cg.Schema) string {
 	fields := s.GetFields()
-	pp := map[string]policies.PrivacyPolicy{}
-	for _, x := range fields {
-		pp[x.WritePrivacy.GetName()] = x.WritePrivacy
-	}
 	data := struct {
-		Name     string
-		Policies map[string]policies.PrivacyPolicy
-		Fields   []cg.FieldStruct
+		Name   string
+		Fields []cg.FieldStruct
 	}{
-		Name:     s.GetName(),
-		Policies: pp,
-		Fields:   fields,
+		Name:   s.GetName(),
+		Fields: fields,
 	}
 	template := "func create{{.Name}}WriteFieldQuery(\n" +
 		"\tconn *db.Conn,\n" +
@@ -583,7 +556,7 @@ func GetNodeWriteFieldQueryStr(s cg.Schema) string {
 		"\t\tcase \"{{.Name}}\":\n" +
 		"\t\t\t{\n" +
 		"\t\t\t\thasAuth, err := check{{$.Name}}Auth(conn, vc, " +
-		"privacy.{{.Privacy.GetName}}, params, id)\n" +
+		"privacy.{{.WritePrivacy.GetName}}, params, id)\n" +
 		"\t\t\t\tif err != nil {\n" +
 		"\t\t\t\t\treturn nil, nil, err\n" +
 		"\t\t\t\t}\n" +
@@ -608,21 +581,13 @@ func GetNodeWriteFieldQueryStr(s cg.Schema) string {
 // GetUpdateNodeGetByIDStr gets the function that updates fields by the id of
 // the node.
 func GetUpdateNodeGetByIDStr(s cg.Schema) string {
-
 	fields := s.GetFields()
-	pp := map[string]policies.PrivacyPolicy{}
-	for _, x := range fields {
-		pp[x.WritePrivacy.GetName()] = x.WritePrivacy
-	}
-
 	data := struct {
-		Name     string
-		Policies map[string]policies.PrivacyPolicy
-		Fields   []cg.FieldStruct
+		Name   string
+		Fields []cg.FieldStruct
 	}{
-		Name:     s.GetName(),
-		Policies: pp,
-		Fields:   fields,
+		Name:   s.GetName(),
+		Fields: fields,
 	}
 	template := "// Update{{.Name}}ByID updates the fields of a specific " +
 		"{{.Name}}.\n" +
@@ -759,25 +724,19 @@ func GetEdgeCheckAuthStr(s cg.Schema, e cg.EdgeStruct) string {
 // specified fields.
 func GetEdgeFieldQueryStr(s cg.Schema, e cg.EdgeStruct) string {
 	fields := e.Fields
-	pp := map[string]policies.PrivacyPolicy{}
-	for _, x := range fields {
-		pp[x.Privacy.GetName()] = x.Privacy
-	}
 	fromVar := strings.ToLower(string(e.FromNode.GetName()[0])) + "id"
 	toVar := strings.ToLower(string(e.ToNode.GetName()[0])) + "id"
 
 	data := struct {
-		Name     string
-		Policies map[string]policies.PrivacyPolicy
-		Fields   []cg.EdgeFieldStruct
-		FromVar  string
-		ToVar    string
+		Name    string
+		Fields  []cg.EdgeFieldStruct
+		FromVar string
+		ToVar   string
 	}{
-		Name:     e.CodeName,
-		Policies: pp,
-		Fields:   fields,
-		FromVar:  fromVar,
-		ToVar:    toVar,
+		Name:    e.CodeName,
+		Fields:  fields,
+		FromVar: fromVar,
+		ToVar:   toVar,
 	}
 	template := "func create{{.Name}}FieldQuery(\n" +
 		"\tconn *db.Conn,\n" +
@@ -831,29 +790,23 @@ func GetEdgeFieldQueryStr(s cg.Schema, e cg.EdgeStruct) string {
 // GetEdgeGetByIDStr generates the the function that retrieves edge fields.
 func GetEdgeGetByIDStr(s cg.Schema, e cg.EdgeStruct) string {
 	fields := e.Fields
-	pp := map[string]policies.PrivacyPolicy{}
-	for _, x := range fields {
-		pp[x.Privacy.GetName()] = x.Privacy
-	}
 	fromVar := strings.ToLower(string(e.FromNode.GetName()[0])) + "id"
 	toVar := strings.ToLower(string(e.ToNode.GetName()[0])) + "id"
 
 	data := struct {
-		Name     string
-		Policies map[string]policies.PrivacyPolicy
-		Fields   []cg.EdgeFieldStruct
-		From     string
-		To       string
-		FromVar  string
-		ToVar    string
+		Name    string
+		Fields  []cg.EdgeFieldStruct
+		From    string
+		To      string
+		FromVar string
+		ToVar   string
 	}{
-		Name:     e.CodeName,
-		Policies: pp,
-		Fields:   fields,
-		From:     e.FromNode.GetName(),
-		To:       e.ToNode.GetName(),
-		FromVar:  fromVar,
-		ToVar:    toVar,
+		Name:    e.CodeName,
+		Fields:  fields,
+		From:    e.FromNode.GetName(),
+		To:      e.ToNode.GetName(),
+		FromVar: fromVar,
+		ToVar:   toVar,
 	}
 	template := "// Get{{.Name}}ByID retrives the fields of a specific " +
 		"{{.Name}}.\n" +
@@ -922,29 +875,23 @@ func GetEdgeGetByIDStr(s cg.Schema, e cg.EdgeStruct) string {
 // GetEdgeGetByIDBatcherStr creates the batcher function for GetEdgeByID
 func GetEdgeGetByIDBatcherStr(s cg.Schema, e cg.EdgeStruct) string {
 	fields := e.Fields
-	pp := map[string]policies.PrivacyPolicy{}
-	for _, x := range fields {
-		pp[x.Privacy.GetName()] = x.Privacy
-	}
 	fromVar := strings.ToLower(string(e.FromNode.GetName()[0])) + "id"
 	toVar := strings.ToLower(string(e.ToNode.GetName()[0])) + "id"
 
 	data := struct {
-		Name     string
-		Policies map[string]policies.PrivacyPolicy
-		Fields   []cg.EdgeFieldStruct
-		From     string
-		To       string
-		FromVar  string
-		ToVar    string
+		Name    string
+		Fields  []cg.EdgeFieldStruct
+		From    string
+		To      string
+		FromVar string
+		ToVar   string
 	}{
-		Name:     e.CodeName,
-		Policies: pp,
-		Fields:   fields,
-		From:     e.FromNode.GetName(),
-		To:       e.ToNode.GetName(),
-		FromVar:  fromVar,
-		ToVar:    toVar,
+		Name:    e.CodeName,
+		Fields:  fields,
+		From:    e.FromNode.GetName(),
+		To:      e.ToNode.GetName(),
+		FromVar: fromVar,
+		ToVar:   toVar,
 	}
 	template := "// Get{{.Name}}ByIDBatcher wraps the Get{{.Name}}ByID to be " +
 		"batched later.\n" +
@@ -997,12 +944,7 @@ func GetEdgeGetByIDBatcherStr(s cg.Schema, e cg.EdgeStruct) string {
 
 // GetEdgeGetByIDsStr generates the function that gets fields on an edge.
 func GetEdgeGetByIDsStr(s cg.Schema, e cg.EdgeStruct) string {
-
 	fields := e.Fields
-	pp := map[string]policies.PrivacyPolicy{}
-	for _, x := range fields {
-		pp[x.Privacy.GetName()] = x.Privacy
-	}
 	fromIDVar := strings.ToLower(string(e.FromNode.GetName()[0])) + "id"
 	toIDVar := strings.ToLower(string(e.ToNode.GetName()[0])) + "id"
 	fromNode := e.FromNode.GetName()
@@ -1010,7 +952,6 @@ func GetEdgeGetByIDsStr(s cg.Schema, e cg.EdgeStruct) string {
 
 	data := struct {
 		Name      string
-		Policies  map[string]policies.PrivacyPolicy
 		Fields    []cg.EdgeFieldStruct
 		FromIDVar string
 		ToIDVar   string
@@ -1018,7 +959,6 @@ func GetEdgeGetByIDsStr(s cg.Schema, e cg.EdgeStruct) string {
 		ToNode    string
 	}{
 		Name:      e.CodeName,
-		Policies:  pp,
 		Fields:    fields,
 		FromIDVar: fromIDVar,
 		ToIDVar:   toIDVar,
@@ -1092,10 +1032,6 @@ func GetEdgeGetByIDsStr(s cg.Schema, e cg.EdgeStruct) string {
 // GetEdgeGetByIDsBatcherStr creates the batcher function for GetEdgeByIDs
 func GetEdgeGetByIDsBatcherStr(s cg.Schema, e cg.EdgeStruct) string {
 	fields := e.Fields
-	pp := map[string]policies.PrivacyPolicy{}
-	for _, x := range fields {
-		pp[x.Privacy.GetName()] = x.Privacy
-	}
 	fromIDVar := strings.ToLower(string(e.FromNode.GetName()[0])) + "id"
 	toIDVar := strings.ToLower(string(e.ToNode.GetName()[0])) + "id"
 	fromNode := e.FromNode.GetName()
@@ -1103,7 +1039,6 @@ func GetEdgeGetByIDsBatcherStr(s cg.Schema, e cg.EdgeStruct) string {
 
 	data := struct {
 		Name      string
-		Policies  map[string]policies.PrivacyPolicy
 		Fields    []cg.EdgeFieldStruct
 		FromIDVar string
 		ToIDVar   string
@@ -1111,7 +1046,6 @@ func GetEdgeGetByIDsBatcherStr(s cg.Schema, e cg.EdgeStruct) string {
 		ToNode    string
 	}{
 		Name:      e.CodeName,
-		Policies:  pp,
 		Fields:    fields,
 		FromIDVar: fromIDVar,
 		ToIDVar:   toIDVar,
@@ -1172,25 +1106,19 @@ func GetEdgeGetByIDsBatcherStr(s cg.Schema, e cg.EdgeStruct) string {
 // updating of fields.
 func GetEdgeWriteFieldQueryStr(s cg.Schema, e cg.EdgeStruct) string {
 	fields := e.Fields
-	pp := map[string]policies.PrivacyPolicy{}
-	for _, x := range fields {
-		pp[x.WritePrivacy.GetName()] = x.WritePrivacy
-	}
 	fromVar := strings.ToLower(string(e.FromNode.GetName()[0])) + "id"
 	toVar := strings.ToLower(string(e.ToNode.GetName()[0])) + "id"
 
 	data := struct {
-		Name     string
-		Policies map[string]policies.PrivacyPolicy
-		Fields   []cg.EdgeFieldStruct
-		FromVar  string
-		ToVar    string
+		Name    string
+		Fields  []cg.EdgeFieldStruct
+		FromVar string
+		ToVar   string
 	}{
-		Name:     e.CodeName,
-		Policies: pp,
-		Fields:   fields,
-		FromVar:  fromVar,
-		ToVar:    toVar,
+		Name:    e.CodeName,
+		Fields:  fields,
+		FromVar: fromVar,
+		ToVar:   toVar,
 	}
 	template := "func create{{.Name}}WriteFieldQuery(\n" +
 		"\tconn *db.Conn,\n" +
@@ -1213,7 +1141,7 @@ func GetEdgeWriteFieldQueryStr(s cg.Schema, e cg.EdgeStruct) string {
 		"\t\tcase \"{{.Name}}\":\n" +
 		"\t\t\t{\n" +
 		"\t\t\t\thasAuth, err := check{{$.Name}}Auth(\n\t\tconn,\n\t\tvc, " +
-		"\n\t\tprivacy.{{.Privacy.GetName}},\n\t\tparams,\n\t\t{{$.FromVar}}, " +
+		"\n\t\tprivacy.{{.WritePrivacy.GetName}},\n\t\tparams,\n\t\t{{$.FromVar}}, " +
 		"\n\t\t{{$.ToVar}},\n)\n" +
 		"\t\t\t\tif err != nil {\n" +
 		"\t\t\t\t\treturn nil, nil, err\n" +
@@ -1238,29 +1166,23 @@ func GetEdgeWriteFieldQueryStr(s cg.Schema, e cg.EdgeStruct) string {
 // GetUpdateEdgeGetByIDStr generates the the function that updates edge fields.
 func GetUpdateEdgeGetByIDStr(s cg.Schema, e cg.EdgeStruct) string {
 	fields := e.Fields
-	pp := map[string]policies.PrivacyPolicy{}
-	for _, x := range fields {
-		pp[x.WritePrivacy.GetName()] = x.WritePrivacy
-	}
 	fromVar := strings.ToLower(string(e.FromNode.GetName()[0])) + "id"
 	toVar := strings.ToLower(string(e.ToNode.GetName()[0])) + "id"
 
 	data := struct {
-		Name     string
-		Policies map[string]policies.PrivacyPolicy
-		Fields   []cg.EdgeFieldStruct
-		From     string
-		To       string
-		FromVar  string
-		ToVar    string
+		Name    string
+		Fields  []cg.EdgeFieldStruct
+		From    string
+		To      string
+		FromVar string
+		ToVar   string
 	}{
-		Name:     e.CodeName,
-		Policies: pp,
-		Fields:   fields,
-		From:     e.FromNode.GetName(),
-		To:       e.ToNode.GetName(),
-		FromVar:  fromVar,
-		ToVar:    toVar,
+		Name:    e.CodeName,
+		Fields:  fields,
+		From:    e.FromNode.GetName(),
+		To:      e.ToNode.GetName(),
+		FromVar: fromVar,
+		ToVar:   toVar,
 	}
 	template := "// Update{{.Name}}ByID updates the fields of a specific " +
 		"{{.Name}}.\n" +
@@ -1322,12 +1244,7 @@ func GetUpdateEdgeGetByIDStr(s cg.Schema, e cg.EdgeStruct) string {
 // GetUpdateEdgeGetByIDsStr generates the function that updates fields on an
 // edge.
 func GetUpdateEdgeGetByIDsStr(s cg.Schema, e cg.EdgeStruct) string {
-
 	fields := e.Fields
-	pp := map[string]policies.PrivacyPolicy{}
-	for _, x := range fields {
-		pp[x.WritePrivacy.GetName()] = x.WritePrivacy
-	}
 	fromIDVar := strings.ToLower(string(e.FromNode.GetName()[0])) + "id"
 	toIDVar := strings.ToLower(string(e.ToNode.GetName()[0])) + "id"
 	fromNode := e.FromNode.GetName()
@@ -1335,7 +1252,6 @@ func GetUpdateEdgeGetByIDsStr(s cg.Schema, e cg.EdgeStruct) string {
 
 	data := struct {
 		Name      string
-		Policies  map[string]policies.PrivacyPolicy
 		Fields    []cg.EdgeFieldStruct
 		FromIDVar string
 		ToIDVar   string
@@ -1343,7 +1259,6 @@ func GetUpdateEdgeGetByIDsStr(s cg.Schema, e cg.EdgeStruct) string {
 		ToNode    string
 	}{
 		Name:      e.CodeName,
-		Policies:  pp,
 		Fields:    fields,
 		FromIDVar: fromIDVar,
 		ToIDVar:   toIDVar,
