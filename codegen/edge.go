@@ -2,7 +2,7 @@
 
 package codegen
 
-import "splits-go-api/auth/policies"
+import "splits-go-api/privacy/policies"
 
 // EdgeStruct holds the internal representation of a schame edge.
 type EdgeStruct struct {

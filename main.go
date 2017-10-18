@@ -6,7 +6,7 @@ package main
 import (
 	"fmt"
 	"os"
-	s "splits-go-api/db/models/schemas"
+	s "splits-go-api/schemas"
 	cg "splits-go-schema-codegen/codegen"
 )
 

@@ -2,7 +2,7 @@
 
 package codegen
 
-import "splits-go-api/auth/policies"
+import "splits-go-api/privacy/policies"
 
 // Schema interface for code generation.
 type Schema interface {

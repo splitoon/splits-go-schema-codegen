@@ -9,7 +9,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"go/format"
-	"splits-go-api/auth/policies"
+	"splits-go-api/privacy/policies"
 	cg "splits-go-schema-codegen/codegen"
 	"strings"
 )
@@ -179,14 +179,14 @@ func GetNodeImportStr(s cg.Schema, manualPart string) string {
 	}
 	template := "import (\n" +
 		"\t\"splits-go-api/auth/contexts\"\n" +
-		"\t\"splits-go-api/auth/policies\"\n" +
 		"\t\"splits-go-api/constants\"\n" +
 		"\t\"splits-go-api/db\"\n" +
 		"\t\"splits-go-api/db/models\"\n" +
 		"\tp \"splits-go-api/db/models/predicates\"\n" +
 		"\t\"splits-go-api/log\"\n" +
-		"\t\"splits-go-api/logic/privacy\"\n" +
 		"\t\"splits-go-api/logic/util\"\n" +
+		"\t\"splits-go-api/privacy\"\n" +
+		"\t\"splits-go-api/privacy/policies\"\n" +
 		"\n" +
 		"\t\"context\"\n" +
 		"\t\"errors\"\n" +
@@ -684,14 +684,14 @@ func GetEdgeImportStr(s cg.Schema, manualPart string) string {
 	}
 	template := "import (\n" +
 		"\t\"splits-go-api/auth/contexts\"\n" +
-		"\t\"splits-go-api/auth/policies\"\n" +
 		"\t\"splits-go-api/constants\"\n" +
 		"\t\"splits-go-api/db\"\n" +
 		"\t\"splits-go-api/db/models\"\n" +
 		"\tp \"splits-go-api/db/models/predicates\"\n" +
 		"\t\"splits-go-api/log\"\n" +
-		"\t\"splits-go-api/logic/privacy\"\n" +
 		"\t\"splits-go-api/logic/util\"\n" +
+		"\t\"splits-go-api/privacy\"\n" +
+		"\t\"splits-go-api/privacy/policies\"\n" +
 		"\n" +
 		"\t\"context\"\n" +
 		"\t\"errors\"\n" +
