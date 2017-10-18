@@ -10,4 +10,5 @@ const (
 	StringType = FieldType("string")
 	FloatType  = FieldType("float64")
 	IntType    = FieldType("int64")
+	BoolType   = FieldType("bool")
 )

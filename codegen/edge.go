@@ -6,31 +6,32 @@ import "splits-go-api/auth/policies"
 
 // EdgeStruct holds the internal representation of a schame edge.
 type EdgeStruct struct {
-	Name           string            // Label of the edge in neo4j (UPPER_CASE)
-	CodeName       string            // Name to be used in generated code CmC
-	Fields         []EdgeFieldStruct // Fields that belong to the edge
-	FromNode       Schema            // Schema of the from node
-	ToNode         Schema            // Schema of the to node
-	ForwardsName   string
-	BackwardsName  string
-	Privacy        policies.PrivacyPolicy
-	ReversePrivacy policies.PrivacyPolicy
-	WritePrivacy   policies.PrivacyPolicy
+	Name            string            // Label of the edge in neo4j (UPPER_CASE)
+	CodeName        string            // Name to be used in generated code CmC
+	Fields          []EdgeFieldStruct // Fields that belong to the edge
+	FromNode        Schema            // Schema of the from node
+	ToNode          Schema            // Schema of the to node
+	ForwardsName    string
+	BackwardsName   string
+	Privacy         policies.PrivacyPolicy
+	ReversePrivacy  policies.PrivacyPolicy
+	WritePrivacy    policies.PrivacyPolicy
+	DeletionPrivacy policies.PrivacyPolicy
 }
 
 // Edge constructor.
 func Edge() *EdgeStruct {
 	return &EdgeStruct{
-		Name:           "",
-		CodeName:       "",
-		Fields:         []EdgeFieldStruct{},
-		FromNode:       nil,
-		ToNode:         nil,
-		ForwardsName:   "",
-		BackwardsName:  "",
-		Privacy:        policies.PrivacyPolicyStruct{},
-		ReversePrivacy: policies.PrivacyPolicyStruct{},
-		WritePrivacy:   policies.PrivacyPolicyStruct{},
+		Name:            "",
+		CodeName:        "",
+		Fields:          []EdgeFieldStruct{},
+		FromNode:        nil,
+		ToNode:          nil,
+		ForwardsName:    "",
+		BackwardsName:   "",
+		Privacy:         policies.PrivacyPolicyStruct{},
+		ReversePrivacy:  policies.PrivacyPolicyStruct{},
+		DeletionPrivacy: policies.PrivacyPolicyStruct{},
 	}
 }
 
@@ -85,6 +86,12 @@ func (es *EdgeStruct) SetPrivacy(pp policies.PrivacyPolicy) *EdgeStruct {
 // SetReversePrivacy is the to reverse privacy setter for an edge.
 func (es *EdgeStruct) SetReversePrivacy(pp policies.PrivacyPolicy) *EdgeStruct {
 	es.ReversePrivacy = pp
+	return es
+}
+
+// SetDeletionPrivacy is the to deletion privacy setter for an edge.
+func (es *EdgeStruct) SetDeletionPrivacy(pp policies.PrivacyPolicy) *EdgeStruct {
+	es.DeletionPrivacy = pp
 	return es
 }
 

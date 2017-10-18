@@ -13,6 +13,7 @@ import (
 var schemas = []cg.Schema{
 	s.UserSchema,
 	s.GroupSchema,
+	s.ReceiptSchema,
 	s.TransactionSchema,
 }
 

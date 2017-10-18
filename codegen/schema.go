@@ -2,6 +2,8 @@
 
 package codegen
 
+import "splits-go-api/auth/policies"
+
 // Schema interface for code generation.
 type Schema interface {
 	GetName() string
@@ -9,4 +11,5 @@ type Schema interface {
 	GetEdges() []EdgeStruct
 	GetEdgePointers() map[string]EdgeStruct
 	AddEdgePointer(e EdgeStruct)
+	GetDeletionPrivacy() policies.PrivacyPolicy
 }

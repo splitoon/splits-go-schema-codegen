@@ -44,13 +44,14 @@ func WriteSchemaLogicNode(
 	sections = append(sections, GetNodeImportStr(s, getManualPart()))
 	sections = append(sections, GetExtraFunctionsStr(s, getManualPart()))
 	sections = append(sections, GetGeneratedFunctionsTagStr())
-	sections = append(sections, GetNodeCheckAuthStr(s))
+	sections = append(sections, GetNodeAuthMap(s))
 	sections = append(sections, GetNodeFieldQueryStr(s))
 	sections = append(sections, GetNodeGetByIDStr(s))
 	sections = append(sections, GetNodeGetByIDBatchStr(s))
 	sections = append(sections, GetNodeConnectedNodesStr(s))
 	sections = append(sections, GetNodeWriteFieldQueryStr(s))
 	sections = append(sections, GetUpdateNodeGetByIDStr(s))
+	sections = append(sections, GetDeleteNodeByIDStr(s))
 	result := strings.Join(sections, "\n")
 	res, err := format.Source([]byte(result))
 	if err != nil {
@@ -90,7 +91,7 @@ func WriteSchemaLogicEdge(
 	sections = append(sections, GetEdgeImportStr(s, getManualPart()))
 	sections = append(sections, GetExtraFunctionsStr(s, getManualPart()))
 	sections = append(sections, GetGeneratedFunctionsTagStr())
-	sections = append(sections, GetEdgeCheckAuthStr(s, e))
+	sections = append(sections, GetEdgeAuthMap(s, e))
 	sections = append(sections, GetEdgeFieldQueryStr(s, e))
 	sections = append(sections, GetEdgeGetByIDStr(s, e))
 	sections = append(sections, GetEdgeGetByIDBatcherStr(s, e))
@@ -180,7 +181,6 @@ func GetNodeImportStr(s cg.Schema, manualPart string) string {
 		"\t\"splits-go-api/auth/contexts\"\n" +
 		"\t\"splits-go-api/auth/policies\"\n" +
 		"\t\"splits-go-api/constants\"\n" +
-		"\t\"splits-go-api/auth/rules\"\n" +
 		"\t\"splits-go-api/db\"\n" +
 		"\t\"splits-go-api/db/models\"\n" +
 		"\tp \"splits-go-api/db/models/predicates\"\n" +
@@ -190,7 +190,6 @@ func GetNodeImportStr(s cg.Schema, manualPart string) string {
 		"\n" +
 		"\t\"context\"\n" +
 		"\t\"errors\"\n" +
-		"\t\"sync\"\n" +
 		"\t\"time\"\n" +
 		"\n" +
 		cg.StartManual + "\n" +
@@ -200,53 +199,37 @@ func GetNodeImportStr(s cg.Schema, manualPart string) string {
 	return cg.ExecTemplate(template, "node_import_string", data)
 }
 
-// GetNodeCheckAuthStr creates the function that checks authorization of a vc.
-func GetNodeCheckAuthStr(s cg.Schema) string {
+// GetNodeAuthMap generates the mapping of fields to auth policies
+func GetNodeAuthMap(s cg.Schema) string {
 	data := struct {
-		Name string
+		Name            string
+		Fields          []cg.FieldStruct
+		DeletionPrivacy policies.PrivacyPolicy
 	}{
-		Name: s.GetName(),
+		Name:            s.GetName(),
+		Fields:          s.GetFields(),
+		DeletionPrivacy: s.GetDeletionPrivacy(),
 	}
-	template := strings.Join([]string{
-		"func check{{.Name}}Auth(",
-		"\tconn *db.Conn,",
-		"\tvc contexts.ViewerContext,",
-		"\tpp policies.PrivacyPolicy,",
-		"\tparams context.Context,",
-		"\tid string,",
-		") (bool, error) {",
-		"",
-		"\t// Check context cache",
-		"\tpermMap := params.Value(constants.PermsKey). " +
-			"(map[string]map[string]bool)",
-		"\tmutex := params.Value(constants.PermsMutexKey).(*sync.Mutex)",
-		"\tmutex.Lock()",
-		"\tperms, ok := permMap[id]",
-		"\tif ok {",
-		"\t\tif hasPerm, ok2 := perms[pp.GetName()]; ok2 {",
-		"\t\t\tmutex.Unlock()",
-		"\t\t\treturn hasPerm, nil",
-		"\t\t}",
-		"\t} else {",
-		"\t\tpermMap[id] = map[string]bool{}",
-		"\t}",
-		"\tmutex.Unlock()",
-		"",
-		"\tauthContext := rules.AuthContext{SrcID: id, Conn: conn}",
-		"\thasAuth, _, err := pp.CheckAuth(&vc, " +
-			"authContext)",
-		"\tif err != nil {",
-		"\treturn false, err",
-		"\t}",
-		"\tmutex.Lock()",
-		"\tperms = permMap[id]",
-		"\tperms[pp.GetName()] = hasAuth",
-		"\tmutex.Unlock()",
-		"",
-		"\treturn hasAuth, nil",
-		"}",
-	}, "\n") + "\n"
-	return cg.ExecTemplate(template, "node_check_auth", data)
+	template := "// {{.Name}}AuthMap maps a field to the corresponding read " +
+		"privacy policy.\n" +
+		"var {{.Name}}AuthMap = map[string]policies.PrivacyPolicy{\n" +
+		"{{range .Fields}}" +
+		"\t\"{{.Name}}\": privacy.{{.Privacy.GetName}},\n" +
+		"{{end}}" +
+		"}\n" +
+		"\n" +
+		"// {{.Name}}WriteAuthMap maps a field to the corresponding write privacy " +
+		"policy.\n" +
+		"var {{.Name}}WriteAuthMap = map[string]policies.PrivacyPolicy{\n" +
+		"{{range .Fields}}" +
+		"\t\"{{.Name}}\": privacy.{{.WritePrivacy.GetName}},\n" +
+		"{{end}}" +
+		"}\n" +
+		"\n" +
+		"// {{.Name}}DeleteAuth is the privacy policy for deleting the node.\n" +
+		"var {{.Name}}DeleteAuth = privacy.{{.DeletionPrivacy.GetName}}\n" +
+		"\n"
+	return cg.ExecTemplate(template, "node_auth_map", data)
 }
 
 // GetNodeFieldQueryStr creates a function that generates a query for the
@@ -272,32 +255,38 @@ func GetNodeFieldQueryStr(s cg.Schema) string {
 		"\t// Check the auth for the fields\n" +
 		"\tfieldCheck := make([]bool, len(fields))\n" +
 		"\tfor i := range fields {\n" +
-		"\tfieldCheck[i] = true\n" +
+		"\t\tfieldCheck[i] = true\n" +
 		"\t}" +
 		"\n" +
 		"\t// Add the fields to the query if appropriate auth\n" +
 		"\tfor i, x := range fields {\n" +
-		"\t\tswitch x {\n\n" +
-		"{{range .Fields}}" +
-		"\t\tcase \"{{.Name}}\":\n" +
-		"\t\t\t{\n" +
-		"\t\t\t\thasAuth, err := check{{$.Name}}Auth(conn, vc, " +
-		"privacy.{{.Privacy.GetName}}, params, id)\n" +
-		"\t\t\t\tif err != nil {\n" +
-		"\t\t\t\t\treturn nil, nil, err\n" +
-		"\t\t\t\t}\n" +
-		"\t\t\t\tif hasAuth {\n" +
-		"\t\t\t\t\tq = q.Return{{.CodeName}}()\n" +
-		"\t\t\t\t} else {\n" +
-		"\t\t\t\t\tfieldCheck[i] = false\n" +
-		"\t\t\t\t}\n" +
-		"\t\t\t}\n" +
-		"{{end}}" +
-		"\t\tdefault:\n" +
-		"\t\t\t{\n" +
-		"\t\t\t\tfieldCheck[i] = false\n" +
-		"\t\t\t\tlog.Warnf(\"invalid requested field: %%s-%%s\", \"{{$.Name}}\", " +
+		"\t\tvar hasAuth bool\n" +
+		"\t\tvar err error\n" +
+		"\t\tif pp, ok := {{$.Name}}AuthMap[x]; !ok {\n" +
+		"\t\t\tlog.Warnf(\"invalid requested field: %%s-%%s\", \"{{$.Name}}\", " +
 		"x)\n" +
+		"\t\t\tfieldCheck[i] = false\n" +
+		"\t\t} else {\n" +
+		"\t\t\thasAuth, err = util.CheckNodeAuth(conn, vc, pp, params, " +
+		"\"{{$.Name}}\", id)\n" +
+		"\t\t\tif err != nil {\n" +
+		"\t\t\t\treturn nil, nil, err\n" +
+		"\t\t\t}\n" +
+		"\t\t}\n" +
+		"\t\tif !hasAuth {\n" +
+		"\t\t\tfieldCheck[i] = false\n" +
+		"\t\t} else {\n" +
+		"\t\t\tswitch x {\n\n" +
+		"{{range .Fields}}" +
+		"\t\t\tcase \"{{.Name}}\":\n" +
+		"\t\t\t\tq = q.Return{{.CodeName}}()\n" +
+		"{{end}}" +
+		"\t\t\tdefault:\n" +
+		"\t\t\t\t{\n" +
+		"\t\t\t\t\tfieldCheck[i] = false\n" +
+		"\t\t\t\t\tlog.Warnf(\"invalid requested field: %%s-%%s\", \"{{$.Name}}\", " +
+		"x)\n" +
+		"\t\t\t\t}\n" +
 		"\t\t\t}\n" +
 		"\t\t}\n" +
 		"\t}\n" +
@@ -460,8 +449,8 @@ func GetNodeConnectedNodesStr(s cg.Schema) string {
 		") ([]interface{}, error) {\n" +
 		"\n" +
 		"\t// Check auth\n" +
-		"\thasAuth, err := check{{$.Name}}Auth(conn, vc, " +
-		"privacy.{{$value.Privacy.GetName}}, params, id)\n" +
+		"\thasAuth, err := util.CheckNodeAuth(conn, vc, " +
+		"privacy.{{$value.Privacy.GetName}}, \n\t\tparams, \"{{$.Name}}\", id)\n" +
 		"\tif err != nil{\n" +
 		"\t\treturn nil, err\n" +
 		"\t}\n" +
@@ -498,8 +487,8 @@ func GetNodeConnectedNodesStr(s cg.Schema) string {
 		") (*util.LogicGetWrapper, error) {\n" +
 		"\n" +
 		"\t// Check auth\n" +
-		"\thasAuth, err := check{{$.Name}}Auth(conn, vc, " +
-		"privacy.{{$value.Privacy.GetName}}, params, id)\n" +
+		"\thasAuth, err := util.CheckNodeAuth(conn, vc, " +
+		"privacy.{{$value.Privacy.GetName}}, \n\t\tparams, \"{{$.Name}}\", id)\n" +
 		"\tif err != nil{\n" +
 		"\t\treturn nil, err\n" +
 		"\t}\n" +
@@ -546,30 +535,37 @@ func GetNodeWriteFieldQueryStr(s cg.Schema) string {
 		"\tq *models.{{.Name}}M,\n" +
 		") (*models.{{.Name}}M, []string, error) {\n" +
 		"\n" +
-		"\t// Keep track of the fields actually mutated\n" +
+		"\t// Keep track of the mutated fields\n" +
 		"\tmutatedFields := []string{}\n" +
 		"\n" +
 		"\t// Add the fields to the query if appropriate auth\n" +
 		"\tfor field, x := range fields {\n" +
-		"\t\tswitch field {\n\n" +
+		"\t\tvar hasAuth bool\n" +
+		"\t\tvar err error\n" +
+		"\t\tif pp, ok := {{$.Name}}AuthMap[field]; !ok {\n" +
+		"\t\t\tlog.Warnf(\"invalid requested field: %%s-%%s\", \"{{$.Name}}\", " +
+		"x)\n" +
+		"\t\t} else {\n" +
+		"\t\t\thasAuth, err = util.CheckNodeAuth(conn, vc, pp, params, " +
+		"\"{{$.Name}}\", id)\n" +
+		"\t\t\tif err != nil {\n" +
+		"\t\t\t\treturn nil, nil, err\n" +
+		"\t\t\t}\n" +
+		"\t\t}\n" +
+		"\t\tif hasAuth {\n" +
+		"\t\t\tswitch field {\n\n" +
 		"{{range .Fields}}" +
-		"\t\tcase \"{{.Name}}\":\n" +
-		"\t\t\t{\n" +
-		"\t\t\t\thasAuth, err := check{{$.Name}}Auth(conn, vc, " +
-		"privacy.{{.WritePrivacy.GetName}}, params, id)\n" +
-		"\t\t\t\tif err != nil {\n" +
-		"\t\t\t\t\treturn nil, nil, err\n" +
-		"\t\t\t\t}\n" +
-		"\t\t\t\tif hasAuth {\n" +
+		"\t\t\tcase \"{{.Name}}\":\n" +
+		"\t\t\t\t{\n" +
 		"\t\t\t\t\tq = q.Set{{.CodeName}}(x.({{.Type}}))\n" +
 		"\t\t\t\t\tmutatedFields = append(mutatedFields, field)\n" +
 		"\t\t\t\t}\n" +
-		"\t\t\t}\n" +
 		"{{end}}" +
-		"\t\tdefault:\n" +
-		"\t\t\t{\n" +
-		"\t\t\t\tlog.Warnf(\"invalid requested field: %%s-%%s\", \"{{$.Name}}\", " +
+		"\t\t\tdefault:\n" +
+		"\t\t\t\t{\n" +
+		"\t\t\t\t\tlog.Warnf(\"invalid requested field: %%s-%%s\", \"{{$.Name}}\", " +
 		"x)\n" +
+		"\t\t\t\t}\n" +
 		"\t\t\t}\n" +
 		"\t\t}\n" +
 		"\t}\n" +
@@ -627,6 +623,54 @@ func GetUpdateNodeGetByIDStr(s cg.Schema) string {
 	return cg.ExecTemplate(template, "node_write_by_id", data)
 }
 
+// GetDeleteNodeByIDStr deletes a node by its id.
+func GetDeleteNodeByIDStr(s cg.Schema) string {
+	data := struct {
+		Name string
+	}{
+		Name: s.GetName(),
+	}
+	template := "// Delete{{.Name}}ByID deletes the node and its corresponding " +
+		"edges.\n" +
+		"// Auth is also respected, otherwise no action will take place.\n" +
+		"func Delete{{.Name}}ByID(\n" +
+		"\tconn *db.Conn,\n" +
+		"\tvc contexts.ViewerContext,\n" +
+		"\tparams context.Context,\n" +
+		"\tid string,\n" +
+		") error {\n" +
+		"\n" +
+		"\t// Check for auth\n" +
+		"\tpp := {{.Name}}DeleteAuth\n" +
+		"\thasAuth, err := util.CheckNodeAuth(conn, vc, pp, params, " +
+		"\"{{.Name}}\", id)\n" +
+		"\tif err != nil {\n" +
+		"\t\treturn err\n" +
+		"\t}\n" +
+		"\n" +
+		"\tif !hasAuth { // No auth to delete the node\n" +
+		"\t\treturn errors.New(\"no auth to delete {{.Name}} node\")\n" +
+		"\t}" +
+		"\n" +
+		"\tres, stmt, err := models.{{.Name}}Deleter().\n" +
+		"\t\tWhereID(p.Equals(id)).\n" +
+		"\t\tDelete().\n" +
+		"\t\tGen(conn)\n" +
+		"\tif stmt != nil {\n" +
+		"\t\tdefer stmt.Close()\n" +
+		"\t}\n" +
+		"\tif err != nil {\n" +
+		"\t\t return err\n" +
+		"\t}\n" +
+		"\tif val, ok := res.Metadata()[\"result_available_after\"]; ok && " +
+		"val.(int64) >= 0 {\n" +
+		"\t\treturn nil\n" +
+		"\t}\n" +
+		"\t return errors.New(\"could not delete {{.Name}}: \" + id)\n" +
+		"}\n"
+	return cg.ExecTemplate(template, "node_delete_by_id", data)
+}
+
 // =============================================================================
 // Edges
 // =============================================================================
@@ -642,7 +686,6 @@ func GetEdgeImportStr(s cg.Schema, manualPart string) string {
 		"\t\"splits-go-api/auth/contexts\"\n" +
 		"\t\"splits-go-api/auth/policies\"\n" +
 		"\t\"splits-go-api/constants\"\n" +
-		"\t\"splits-go-api/auth/rules\"\n" +
 		"\t\"splits-go-api/db\"\n" +
 		"\t\"splits-go-api/db/models\"\n" +
 		"\tp \"splits-go-api/db/models/predicates\"\n" +
@@ -652,7 +695,6 @@ func GetEdgeImportStr(s cg.Schema, manualPart string) string {
 		"\n" +
 		"\t\"context\"\n" +
 		"\t\"errors\"\n" +
-		"\t\"sync\"\n" +
 		"\t\"time\"\n" +
 		"\n" +
 		cg.StartManual + "\n" +
@@ -662,62 +704,37 @@ func GetEdgeImportStr(s cg.Schema, manualPart string) string {
 	return cg.ExecTemplate(template, "edge_import_string", data)
 }
 
-// GetEdgeCheckAuthStr generates the auth check for edge fields.
-func GetEdgeCheckAuthStr(s cg.Schema, e cg.EdgeStruct) string {
-	fromVar := strings.ToLower(string(e.FromNode.GetName()[0])) + "id"
-	toVar := strings.ToLower(string(e.ToNode.GetName()[0])) + "id"
+// GetEdgeAuthMap generates the mapping of fields to auth policies
+func GetEdgeAuthMap(s cg.Schema, e cg.EdgeStruct) string {
 	data := struct {
-		Name    string
-		FromVar string
-		ToVar   string
+		Name            string
+		Fields          []cg.EdgeFieldStruct
+		DeletionPrivacy policies.PrivacyPolicy
 	}{
-		Name:    e.CodeName,
-		FromVar: fromVar,
-		ToVar:   toVar,
+		Name:            e.CodeName,
+		Fields:          e.Fields,
+		DeletionPrivacy: e.DeletionPrivacy,
 	}
-	template := strings.Join([]string{
-		"func check{{.Name}}Auth(",
-		"\tconn *db.Conn,",
-		"\tvc contexts.ViewerContext,",
-		"\tpp policies.PrivacyPolicy,",
-		"\tparams context.Context,",
-		"\t{{.FromVar}} string,",
-		"\t{{.ToVar}} string,",
-		") (bool, error) {",
-		"",
-		"\t// Check context cache",
-		"\tcacheID := {{.FromVar}} + \"-\" +{{.ToVar}}",
-		"\tpermMap := params.Value(constants.PermsKey). " +
-			"(map[string]map[string]bool)",
-		"\tmutex := params.Value(constants.PermsMutexKey).(*sync.Mutex)",
-		"\tmutex.Lock()",
-		"\tperms, ok := permMap[cacheID]",
-		"\tif ok {",
-		"\t\tif hasPerm, ok2 := perms[pp.GetName()]; ok2 {",
-		"\t\t\tmutex.Unlock()",
-		"\t\t\treturn hasPerm, nil",
-		"\t\t}",
-		"\t} else {",
-		"\t\tpermMap[cacheID] = map[string]bool{}",
-		"\t}",
-		"\tmutex.Unlock()",
-		"",
-		"\tauthContext := rules.AuthContext{SrcID: {{.FromVar}}, DestID: " +
-			"{{.ToVar}}, Conn: conn}",
-		"\thasAuth, _, err := pp.CheckAuth(&vc, " +
-			"authContext)",
-		"\tif err != nil {",
-		"\treturn false, err",
-		"\t}",
-		"\tmutex.Lock()",
-		"\tperms = permMap[cacheID]",
-		"\tperms[pp.GetName()] = hasAuth",
-		"\tmutex.Unlock()",
-		"",
-		"\treturn hasAuth, nil",
-		"}",
-	}, "\n") + "\n"
-	return cg.ExecTemplate(template, "edge_check_auth", data)
+	template := "// {{.Name}}AuthMap maps a field to the corresponding read " +
+		"privacy policy.\n" +
+		"var {{.Name}}AuthMap = map[string]policies.PrivacyPolicy{\n" +
+		"{{range .Fields}}" +
+		"\t\"{{.Name}}\": privacy.{{.Privacy.GetName}},\n" +
+		"{{end}}" +
+		"}\n" +
+		"\n" +
+		"// {{.Name}}WriteAuthMap maps a field to the corresponding write privacy " +
+		"policy.\n" +
+		"var {{.Name}}WriteAuthMap = map[string]policies.PrivacyPolicy{\n" +
+		"{{range .Fields}}" +
+		"\t\"{{.Name}}\": privacy.{{.WritePrivacy.GetName}},\n" +
+		"{{end}}" +
+		"}\n" +
+		"\n" +
+		"// {{.Name}}DeleteAuth is the privacy policy for deleting the node.\n" +
+		"var {{.Name}}DeleteAuth = privacy.{{.DeletionPrivacy.GetName}}\n" +
+		"\n"
+	return cg.ExecTemplate(template, "edge_auth_map", data)
 }
 
 // GetEdgeFieldQueryStr creates a function that generates a query for the
@@ -757,28 +774,33 @@ func GetEdgeFieldQueryStr(s cg.Schema, e cg.EdgeStruct) string {
 		"\n" +
 		"\t// Add the fields to the query if appropriate auth\n" +
 		"\tfor i, x := range fields {\n" +
-		"\t\tswitch x {\n\n" +
-		"{{range .Fields}}" +
-		"\t\tcase \"{{.Name}}\":\n" +
-		"\t\t\t{\n" +
-		"\t\t\t\thasAuth, err := check{{$.Name}}Auth(\n\t\tconn,\n\t\tvc, " +
-		"\n\t\tprivacy.{{.Privacy.GetName}},\n\t\tparams,\n\t\t{{$.FromVar}}, " +
-		"\n\t\t{{$.ToVar}},\n)\n" +
-		"\t\t\t\tif err != nil {\n" +
-		"\t\t\t\t\treturn nil, nil, err\n" +
-		"\t\t\t\t}\n" +
-		"\t\t\t\tif hasAuth {\n" +
-		"\t\t\t\t\tq = q.Return{{.CodeName}}()\n" +
-		"\t\t\t\t} else {\n" +
-		"\t\t\t\t\tfieldCheck[i] = false\n" +
-		"\t\t\t\t}\n" +
-		"\t\t\t}\n" +
-		"{{end}}" +
-		"\t\tdefault:\n" +
-		"\t\t\t{\n" +
-		"\t\t\t\tfieldCheck[i] = false\n" +
-		"\t\t\t\tlog.Warnf(\"invalid requested field: %%s-%%s\", \"{{$.Name}}\", " +
+		"\t\tvar hasAuth bool\n" +
+		"\t\tvar err error\n" +
+		"\t\tif pp, ok := {{$.Name}}AuthMap[x]; !ok {\n" +
+		"\t\t\tlog.Warnf(\"invalid requested field: %%s-%%s\", \"{{$.Name}}\", " +
 		"x)\n" +
+		"\t\t\tfieldCheck[i] = false\n" +
+		"\t\t} else {\n" +
+		"\t\t\thasAuth, err = util.CheckEdgeAuth(conn, vc, pp, params, " +
+		"\"{{$.Name}}\", {{$.FromVar}}, {{$.ToVar}})\n" +
+		"\t\t\tif err != nil {\n" +
+		"\t\t\t\treturn nil, nil, err\n" +
+		"\t\t\t}\n" +
+		"\t\t}\n" +
+		"\t\tif !hasAuth {\n" +
+		"\t\t\tfieldCheck[i] = false\n" +
+		"\t\t} else {\n" +
+		"\t\t\tswitch x {\n\n" +
+		"{{range .Fields}}" +
+		"\t\t\tcase \"{{.Name}}\":\n" +
+		"\t\t\t\tq = q.Return{{.CodeName}}()\n" +
+		"{{end}}" +
+		"\t\t\tdefault:\n" +
+		"\t\t\t\t{\n" +
+		"\t\t\t\t\tfieldCheck[i] = false\n" +
+		"\t\t\t\t\tlog.Warnf(\"invalid requested field: %%s-%%s\", \"{{$.Name}}\", " +
+		"x)\n" +
+		"\t\t\t\t}\n" +
 		"\t\t\t}\n" +
 		"\t\t}\n" +
 		"\t}\n" +
@@ -1136,25 +1158,29 @@ func GetEdgeWriteFieldQueryStr(s cg.Schema, e cg.EdgeStruct) string {
 		"\n" +
 		"\t// Add the fields to the query if appropriate auth\n" +
 		"\tfor field, x := range fields {\n" +
-		"\t\tswitch field {\n\n" +
+		"\t\tvar hasAuth bool\n" +
+		"\t\tvar err error\n" +
+		"\t\tif pp, ok := {{$.Name}}AuthMap[field]; !ok {\n" +
+		"\t\t\tlog.Warnf(\"invalid requested field: %%s-%%s\", \"{{$.Name}}\", " +
+		"field)\n" +
+		"\t\t} else {\n" +
+		"\t\t\thasAuth, err = util.CheckEdgeAuth(conn, vc, pp, params, " +
+		"\"{{$.Name}}\", {{$.FromVar}}, {{$.ToVar}})\n" +
+		"\t\t\tif err != nil {\n" +
+		"\t\t\t\treturn nil, nil, err\n" +
+		"\t\t\t}\n" +
+		"\t\t}\n" +
+		"\t\tif hasAuth {\n" +
+		"\t\t\tswitch field {\n\n" +
 		"{{range .Fields}}" +
 		"\t\tcase \"{{.Name}}\":\n" +
-		"\t\t\t{\n" +
-		"\t\t\t\thasAuth, err := check{{$.Name}}Auth(\n\t\tconn,\n\t\tvc, " +
-		"\n\t\tprivacy.{{.WritePrivacy.GetName}},\n\t\tparams,\n\t\t{{$.FromVar}}, " +
-		"\n\t\t{{$.ToVar}},\n)\n" +
-		"\t\t\t\tif err != nil {\n" +
-		"\t\t\t\t\treturn nil, nil, err\n" +
-		"\t\t\t\t}\n" +
-		"\t\t\t\tif hasAuth {\n" +
 		"\t\t\t\t\tq = q.Set{{.CodeName}}(x.({{.Type}}))\n" +
-		"\t\t\t\t}\n" +
-		"\t\t\t}\n" +
 		"{{end}}" +
 		"\t\tdefault:\n" +
 		"\t\t\t{\n" +
 		"\t\t\t\tlog.Warnf(\"invalid requested field: %%s-%%s\", \"{{$.Name}}\", " +
 		"x)\n" +
+		"\t\t\t}\n" +
 		"\t\t\t}\n" +
 		"\t\t}\n" +
 		"\t}\n" +
@@ -1219,9 +1245,9 @@ func GetUpdateEdgeGetByIDStr(s cg.Schema, e cg.EdgeStruct) string {
 		"\tq, mutatedFields, err := create{{.Name}}WriteFieldQuery(\n\t\tconn," +
 		"\n\t\tvc, " +
 		"\n\t\tparams,\n\t\tid,\n\t\t{{.FromVar}},\n\t\t{{.ToVar}},\n\t\tfields, " +
-		"\n\t\tq,\n)\n" +
+		"\n\t\tq,\n\t)\n" +
 		"\tif err != nil {\n" +
-		"\t return nil, err\n" +
+		"\t\treturn nil, err\n" +
 		"\t}\n" +
 		"\n" +
 		"\t// Execute the query\n" +
@@ -1300,9 +1326,9 @@ func GetUpdateEdgeGetByIDsStr(s cg.Schema, e cg.EdgeStruct) string {
 		"\tq, mutatedFields, err := create{{.Name}}WriteFieldQuery(\n\t\tconn," +
 		"\n\t\tvc, " +
 		"\n\t\tparams,\n\t\tid,\n\t\t{{$.FromIDVar}},\n\t\t{{$.ToIDVar}}, " +
-		"\n\t\tfields,\n\t\tq,\n)\n" +
+		"\n\t\tfields,\n\t\tq,\n\t)\n" +
 		"\tif err != nil {\n" +
-		"\t return nil, err\n" +
+		"\t\treturn nil, err\n" +
 		"\t}\n" +
 		"\n" +
 		"\t// Execute the query\n" +
