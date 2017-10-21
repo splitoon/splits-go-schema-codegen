@@ -9,7 +9,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"go/format"
-	"splits-go-api/privacy/policies"
+	"splits-go-api/privacy"
 	cg "splits-go-schema-codegen/codegen"
 	"strings"
 )
@@ -188,7 +188,6 @@ func GetNodeImportStr(s cg.Schema, manualPart string) string {
 		"\t\"splits-go-api/log\"\n" +
 		"\t\"splits-go-api/logic/util\"\n" +
 		"\t\"splits-go-api/privacy\"\n" +
-		"\t\"splits-go-api/privacy/policies\"\n" +
 		"\n" +
 		"\t\"context\"\n" +
 		"\t\"errors\"\n" +
@@ -206,7 +205,7 @@ func GetNodeAuthMap(s cg.Schema) string {
 	data := struct {
 		Name            string
 		Fields          []cg.FieldStruct
-		DeletionPrivacy policies.PrivacyPolicy
+		DeletionPrivacy privacy.PrivacyPolicy
 	}{
 		Name:            s.GetName(),
 		Fields:          s.GetFields(),
@@ -214,7 +213,7 @@ func GetNodeAuthMap(s cg.Schema) string {
 	}
 	template := "// {{.Name}}AuthMap maps a field to the corresponding read " +
 		"privacy policy.\n" +
-		"var {{.Name}}AuthMap = map[string]policies.PrivacyPolicy{\n" +
+		"var {{.Name}}AuthMap = map[string]privacy.PrivacyPolicy{\n" +
 		"{{range .Fields}}" +
 		"\t\"{{.Name}}\": privacy.{{.Privacy.GetName}},\n" +
 		"{{end}}" +
@@ -222,7 +221,7 @@ func GetNodeAuthMap(s cg.Schema) string {
 		"\n" +
 		"// {{.Name}}WriteAuthMap maps a field to the corresponding write privacy " +
 		"policy.\n" +
-		"var {{.Name}}WriteAuthMap = map[string]policies.PrivacyPolicy{\n" +
+		"var {{.Name}}WriteAuthMap = map[string]privacy.PrivacyPolicy{\n" +
 		"{{range .Fields}}" +
 		"\t\"{{.Name}}\": privacy.{{.WritePrivacy.GetName}},\n" +
 		"{{end}}" +
@@ -405,7 +404,7 @@ func GetNodeConnectedNodesStr(s cg.Schema) string {
 	type NamePrivacyPair struct {
 		Name      string
 		QueryName string
-		Privacy   policies.PrivacyPolicy
+		Privacy   privacy.PrivacyPolicy
 	}
 
 	// Extract the edge name to the node name
@@ -693,7 +692,6 @@ func GetEdgeImportStr(s cg.Schema, manualPart string) string {
 		"\t\"splits-go-api/log\"\n" +
 		"\t\"splits-go-api/logic/util\"\n" +
 		"\t\"splits-go-api/privacy\"\n" +
-		"\t\"splits-go-api/privacy/policies\"\n" +
 		"\n" +
 		"\t\"context\"\n" +
 		"\t\"errors\"\n" +
@@ -711,7 +709,7 @@ func GetEdgeAuthMap(s cg.Schema, e cg.EdgeStruct) string {
 	data := struct {
 		Name            string
 		Fields          []cg.EdgeFieldStruct
-		DeletionPrivacy policies.PrivacyPolicy
+		DeletionPrivacy privacy.PrivacyPolicy
 	}{
 		Name:            e.CodeName,
 		Fields:          e.Fields,
@@ -719,7 +717,7 @@ func GetEdgeAuthMap(s cg.Schema, e cg.EdgeStruct) string {
 	}
 	template := "// {{.Name}}AuthMap maps a field to the corresponding read " +
 		"privacy policy.\n" +
-		"var {{.Name}}AuthMap = map[string]policies.PrivacyPolicy{\n" +
+		"var {{.Name}}AuthMap = map[string]privacy.PrivacyPolicy{\n" +
 		"{{range .Fields}}" +
 		"\t\"{{.Name}}\": privacy.{{.Privacy.GetName}},\n" +
 		"{{end}}" +
@@ -727,7 +725,7 @@ func GetEdgeAuthMap(s cg.Schema, e cg.EdgeStruct) string {
 		"\n" +
 		"// {{.Name}}WriteAuthMap maps a field to the corresponding write privacy " +
 		"policy.\n" +
-		"var {{.Name}}WriteAuthMap = map[string]policies.PrivacyPolicy{\n" +
+		"var {{.Name}}WriteAuthMap = map[string]privacy.PrivacyPolicy{\n" +
 		"{{range .Fields}}" +
 		"\t\"{{.Name}}\": privacy.{{.WritePrivacy.GetName}},\n" +
 		"{{end}}" +

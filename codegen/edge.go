@@ -2,7 +2,9 @@
 
 package codegen
 
-import "splits-go-api/privacy/policies"
+import (
+	"splits-go-api/privacy"
+)
 
 // EdgeStruct holds the internal representation of a schame edge.
 type EdgeStruct struct {
@@ -13,10 +15,10 @@ type EdgeStruct struct {
 	ToNode          Schema            // Schema of the to node
 	ForwardsName    string
 	BackwardsName   string
-	Privacy         policies.PrivacyPolicy
-	ReversePrivacy  policies.PrivacyPolicy
-	WritePrivacy    policies.PrivacyPolicy
-	DeletionPrivacy policies.PrivacyPolicy
+	Privacy         privacy.PrivacyPolicy
+	ReversePrivacy  privacy.PrivacyPolicy
+	WritePrivacy    privacy.PrivacyPolicy
+	DeletionPrivacy privacy.PrivacyPolicy
 }
 
 // Edge constructor.
@@ -29,9 +31,9 @@ func Edge() *EdgeStruct {
 		ToNode:          nil,
 		ForwardsName:    "",
 		BackwardsName:   "",
-		Privacy:         policies.PrivacyPolicyStruct{},
-		ReversePrivacy:  policies.PrivacyPolicyStruct{},
-		DeletionPrivacy: policies.PrivacyPolicyStruct{},
+		Privacy:         privacy.PrivacyPolicyStruct{},
+		ReversePrivacy:  privacy.PrivacyPolicyStruct{},
+		DeletionPrivacy: privacy.PrivacyPolicyStruct{},
 	}
 }
 
@@ -78,19 +80,19 @@ func (es *EdgeStruct) SetBackwardsName(n string) *EdgeStruct {
 }
 
 // SetPrivacy is the to privacy setter for an edge.
-func (es *EdgeStruct) SetPrivacy(pp policies.PrivacyPolicy) *EdgeStruct {
+func (es *EdgeStruct) SetPrivacy(pp privacy.PrivacyPolicy) *EdgeStruct {
 	es.Privacy = pp
 	return es
 }
 
 // SetReversePrivacy is the to reverse privacy setter for an edge.
-func (es *EdgeStruct) SetReversePrivacy(pp policies.PrivacyPolicy) *EdgeStruct {
+func (es *EdgeStruct) SetReversePrivacy(pp privacy.PrivacyPolicy) *EdgeStruct {
 	es.ReversePrivacy = pp
 	return es
 }
 
 // SetDeletionPrivacy is the to deletion privacy setter for an edge.
-func (es *EdgeStruct) SetDeletionPrivacy(pp policies.PrivacyPolicy) *EdgeStruct {
+func (es *EdgeStruct) SetDeletionPrivacy(pp privacy.PrivacyPolicy) *EdgeStruct {
 	es.DeletionPrivacy = pp
 	return es
 }
@@ -104,9 +106,9 @@ type EdgeFieldStruct struct {
 	ExampleValue  string    // Example value for the field (in string form)
 	Unique        bool      // Whether the field should be unique
 	Indexed       bool      // Whether the field should be indexed
-	Privacy       policies.PrivacyPolicy
-	WritePrivacy  policies.PrivacyPolicy
-	RWritePrivacy policies.PrivacyPolicy
+	Privacy       privacy.PrivacyPolicy
+	WritePrivacy  privacy.PrivacyPolicy
+	RWritePrivacy privacy.PrivacyPolicy
 }
 
 // EdgeField constructor.
@@ -119,9 +121,9 @@ func EdgeField() *EdgeFieldStruct {
 		ExampleValue:  "",
 		Unique:        false,
 		Indexed:       false,
-		Privacy:       policies.PrivacyPolicyStruct{},
-		WritePrivacy:  policies.PrivacyPolicyStruct{},
-		RWritePrivacy: policies.PrivacyPolicyStruct{},
+		Privacy:       privacy.PrivacyPolicyStruct{},
+		WritePrivacy:  privacy.PrivacyPolicyStruct{},
+		RWritePrivacy: privacy.PrivacyPolicyStruct{},
 	}
 }
 
@@ -169,7 +171,7 @@ func (es *EdgeFieldStruct) SetIndexed(indexed bool) *EdgeFieldStruct {
 
 // SetPrivacy is the privacy setter for an edge field.
 func (es *EdgeFieldStruct) SetPrivacy(
-	pp policies.PrivacyPolicy,
+	pp privacy.PrivacyPolicy,
 ) *EdgeFieldStruct {
 	es.Privacy = pp
 	return es
@@ -177,7 +179,7 @@ func (es *EdgeFieldStruct) SetPrivacy(
 
 // SetWritePrivacy is the privacy setter for writing an edge field.
 func (es *EdgeFieldStruct) SetWritePrivacy(
-	pp policies.PrivacyPolicy,
+	pp privacy.PrivacyPolicy,
 ) *EdgeFieldStruct {
 	es.WritePrivacy = pp
 	return es

@@ -2,7 +2,7 @@
 
 package codegen
 
-import "splits-go-api/privacy/policies"
+import "splits-go-api/privacy"
 
 // Schema interface for code generation.
 type Schema interface {
@@ -11,5 +11,5 @@ type Schema interface {
 	GetEdges() []EdgeStruct
 	GetEdgePointers() map[string]EdgeStruct
 	AddEdgePointer(e EdgeStruct)
-	GetDeletionPrivacy() policies.PrivacyPolicy
+	GetDeletionPrivacy() privacy.PrivacyPolicy
 }
