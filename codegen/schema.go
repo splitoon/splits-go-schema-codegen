@@ -11,5 +11,5 @@ type Schema interface {
 	GetEdges() []EdgeStruct
 	GetEdgePointers() map[string]EdgeStruct
 	AddEdgePointer(e EdgeStruct)
-	GetDeletionPrivacy() privacy.PrivacyPolicy
+	GetDeletionPrivacy() privacy.Policy
 }

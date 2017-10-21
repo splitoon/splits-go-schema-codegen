@@ -15,8 +15,8 @@ type FieldStruct struct {
 	ExampleValue string    // Example value for the field (in string form)
 	Unique       bool      // Whether the field be unique
 	Indexed      bool      // Whether the field should have an index on it
-	Privacy      privacy.PrivacyPolicy
-	WritePrivacy privacy.PrivacyPolicy
+	Privacy      privacy.Policy
+	WritePrivacy privacy.Policy
 }
 
 // Field constructor.
@@ -29,8 +29,8 @@ func Field() *FieldStruct {
 		ExampleValue: "",
 		Unique:       false,
 		Indexed:      false,
-		Privacy:      privacy.PrivacyPolicyStruct{},
-		WritePrivacy: privacy.PrivacyPolicyStruct{},
+		Privacy:      privacy.PolicyStruct{},
+		WritePrivacy: privacy.PolicyStruct{},
 	}
 }
 
@@ -77,13 +77,13 @@ func (fs *FieldStruct) SetIndexed(indexed bool) *FieldStruct {
 }
 
 // SetPrivacy is the privacy setter for a node field.
-func (fs *FieldStruct) SetPrivacy(pp privacy.PrivacyPolicy) *FieldStruct {
+func (fs *FieldStruct) SetPrivacy(pp privacy.Policy) *FieldStruct {
 	fs.Privacy = pp
 	return fs
 }
 
 // SetWritePrivacy is the privacy setter for writing a node field.
-func (fs *FieldStruct) SetWritePrivacy(pp privacy.PrivacyPolicy) *FieldStruct {
+func (fs *FieldStruct) SetWritePrivacy(pp privacy.Policy) *FieldStruct {
 	fs.WritePrivacy = pp
 	return fs
 }
