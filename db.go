@@ -129,6 +129,24 @@ func generateDBCode(mergeFlag bool, forceFlag bool) {
 	fmt.Fprintf(indicesFile, indicesContent)
 	filesGenerated = append(filesGenerated, indicesFilePath)
 
+	// Generate the db tests
+	autogenTestContent := db.WriteAutogenTests(schemas, packageName)
+	err = os.MkdirAll(destination+packageName, os.ModePerm)
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+	autogenFilePath := destination + packageName + "/autogen_test.go"
+	autogenFile, err := os.Create(autogenFilePath)
+	if err != nil {
+		log.Printf("Error in writing to file: %s", autogenFilePath)
+		log.Println(err)
+		os.Exit(1)
+	}
+	fmt.Fprintf(autogenFile, autogenTestContent)
+	filesGenerated = append(filesGenerated, autogenFilePath)
+
+	// List the generated files
 	for _, file := range filesGenerated {
 		fmt.Printf("Generated %s\n", file)
 	}

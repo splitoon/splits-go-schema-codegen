@@ -10,6 +10,7 @@ type FieldStruct struct {
 	CodeName     string    // Name to be used in generated code (CamelCase)
 	Type         FieldType // The type for the field (valid ones in types.go)
 	DefaultValue string    // Default value for the field (in string form)
+	ExampleValue string    // Example value for the field (in string form)
 	Unique       bool      // Whether the field be unique
 	Indexed      bool      // Whether the field should have an index on it
 	Privacy      policies.PrivacyPolicy
@@ -23,6 +24,7 @@ func Field() *FieldStruct {
 		CodeName:     "",
 		Type:         "",
 		DefaultValue: "",
+		ExampleValue: "",
 		Unique:       false,
 		Indexed:      false,
 		Privacy:      policies.PrivacyPolicyStruct{},
@@ -51,6 +53,12 @@ func (fs *FieldStruct) SetType(t FieldType) *FieldStruct {
 // SetDefaultValue is the default value setter for a node field.
 func (fs *FieldStruct) SetDefaultValue(v string) *FieldStruct {
 	fs.DefaultValue = v
+	return fs
+}
+
+// SetExampleValue is the example value setter for a node field.
+func (fs *FieldStruct) SetExampleValue(v string) *FieldStruct {
+	fs.ExampleValue = v
 	return fs
 }
 

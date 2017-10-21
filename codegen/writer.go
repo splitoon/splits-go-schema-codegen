@@ -16,8 +16,9 @@ func ExecTemplate(
 	tmplStr string,
 	tmplName string,
 	data interface{},
+	funcMap template.FuncMap,
 ) string {
-	tmpl, err := template.New(tmplName).Parse(tmplStr)
+	tmpl, err := template.New(tmplName).Funcs(funcMap).Parse(tmplStr)
 	if err != nil {
 		panic(err)
 	}

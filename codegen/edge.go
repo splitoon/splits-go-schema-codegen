@@ -101,6 +101,7 @@ type EdgeFieldStruct struct {
 	CodeName      string    // Name to be used in generated code (CamelCase)
 	Type          FieldType // The type for the field (valid ones in types.go)
 	DefaultValue  string    // Default value for the field (in string form)
+	ExampleValue  string    // Example value for the field (in string form)
 	Unique        bool      // Whether the field should be unique
 	Indexed       bool      // Whether the field should be indexed
 	Privacy       policies.PrivacyPolicy
@@ -115,6 +116,7 @@ func EdgeField() *EdgeFieldStruct {
 		CodeName:      "",
 		Type:          "",
 		DefaultValue:  "",
+		ExampleValue:  "",
 		Unique:        false,
 		Indexed:       false,
 		Privacy:       policies.PrivacyPolicyStruct{},
@@ -138,6 +140,12 @@ func (es *EdgeFieldStruct) SetCodeName(name string) *EdgeFieldStruct {
 // SetDefaultValue is the default value setter for an edge field.
 func (es *EdgeFieldStruct) SetDefaultValue(v string) *EdgeFieldStruct {
 	es.DefaultValue = v
+	return es
+}
+
+// SetExampleValue is the test value setter for a node field.
+func (es *EdgeFieldStruct) SetExampleValue(v string) *EdgeFieldStruct {
+	es.ExampleValue = v
 	return es
 }
 
