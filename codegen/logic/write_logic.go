@@ -543,7 +543,7 @@ func GetNodeWriteFieldQueryStr(s cg.Schema) string {
 		"\tfor field, x := range fields {\n" +
 		"\t\tvar hasAuth bool\n" +
 		"\t\tvar err error\n" +
-		"\t\tif pp, ok := {{$.Name}}AuthMap[field]; !ok {\n" +
+		"\t\tif pp, ok := {{$.Name}}WriteAuthMap[field]; !ok {\n" +
 		"\t\t\tlog.Warnf(\"invalid requested field: %%s-%%s\", \"{{$.Name}}\", " +
 		"x)\n" +
 		"\t\t} else {\n" +
@@ -551,6 +551,10 @@ func GetNodeWriteFieldQueryStr(s cg.Schema) string {
 		"\"{{$.Name}}\", id)\n" +
 		"\t\t\tif err != nil {\n" +
 		"\t\t\t\treturn nil, nil, err\n" +
+		"\t\t\t}\n" +
+		"\t\t\tif !hasAuth {\n" +
+		"\t\t\t\treturn nil, nil, errors.New(\"invalid auth for {{.Name}}:\" + " +
+		"field)\n" +
 		"\t\t\t}\n" +
 		"\t\t}\n" +
 		"\t\tif hasAuth {\n" +
@@ -1160,7 +1164,7 @@ func GetEdgeWriteFieldQueryStr(s cg.Schema, e cg.EdgeStruct) string {
 		"\tfor field, x := range fields {\n" +
 		"\t\tvar hasAuth bool\n" +
 		"\t\tvar err error\n" +
-		"\t\tif pp, ok := {{$.Name}}AuthMap[field]; !ok {\n" +
+		"\t\tif pp, ok := {{$.Name}}WriteAuthMap[field]; !ok {\n" +
 		"\t\t\tlog.Warnf(\"invalid requested field: %%s-%%s\", \"{{$.Name}}\", " +
 		"field)\n" +
 		"\t\t} else {\n" +
@@ -1168,6 +1172,10 @@ func GetEdgeWriteFieldQueryStr(s cg.Schema, e cg.EdgeStruct) string {
 		"\"{{$.Name}}\", {{$.FromVar}}, {{$.ToVar}})\n" +
 		"\t\t\tif err != nil {\n" +
 		"\t\t\t\treturn nil, nil, err\n" +
+		"\t\t\t}\n" +
+		"\t\t\tif !hasAuth {\n" +
+		"\t\t\t\treturn nil, nil, errors.New(\"invalid auth for {{.Name}}:\" + " +
+		"field)\n" +
 		"\t\t\t}\n" +
 		"\t\t}\n" +
 		"\t\tif hasAuth {\n" +
