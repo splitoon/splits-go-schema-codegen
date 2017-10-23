@@ -602,6 +602,18 @@ func GetUpdateNodeGetByIDStr(s cg.Schema) string {
 		"\tfields map[string]interface{},\n" +
 		") ([]string, error) {\n" +
 		"\n" +
+		"\t// Check that the id exists\n" +
+		"\tids, err := models.{{.Name}}Query().\n" +
+		"\t\tWhereID(p.Equals(id)).\n" +
+		"\t\tReturnID().\n" +
+		"\t\tGenOne(conn)\n" +
+		"\tif err != nil{\n" +
+		"\t\treturn nil, err\n" +
+		"\t}\n" +
+		"\tif ids == nil || len(ids) == 0 {\n" +
+		"\t\treturn nil, errors.New(\"no such {{.Name}} with id: \" + id)" +
+		"\t}\n" +
+		"\n" +
 		"\t// Generate the query\n" +
 		"\tq := models.{{.Name}}Mutator(id)\n" +
 		"\tq, mutatedFields, err := create{{.Name}}WriteFieldQuery(conn, vc, " +
