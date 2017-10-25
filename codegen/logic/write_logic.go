@@ -679,8 +679,7 @@ func GetDeleteNodeByIDStr(s cg.Schema) string {
 		"\tif err != nil {\n" +
 		"\t\t return err\n" +
 		"\t}\n" +
-		"\tif val, ok := res.Metadata()[\"result_available_after\"]; ok && " +
-		"val.(int64) >= 0 {\n" +
+		"\tif _, ok := res.Metadata()[\"result_available_after\"]; ok {\n" +
 		"\t\treturn nil\n" +
 		"\t}\n" +
 		"\t return errors.New(\"could not delete {{.Name}}: \" + id)\n" +
@@ -954,7 +953,7 @@ func GetEdgeGetByIDBatcherStr(s cg.Schema, e cg.EdgeStruct) string {
 		"\t\treturn nil, err\n" +
 		"\t}\n" +
 		"\tif row == nil || row[0] == nil || row[1] == nil {\n" +
-		"\t\treturn nil, errors.New(\"no such edges\")\n" +
+		"\t\treturn nil, nil\n" +
 		"\t}\n" +
 		"\t{{.FromVar}} := row[0].(string)\n" +
 		"\t{{.ToVar}} := row[1].(string)\n" +
@@ -1028,7 +1027,7 @@ func GetEdgeGetByIDsStr(s cg.Schema, e cg.EdgeStruct) string {
 		"\t\treturn nil, err\n" +
 		"\t}\n" +
 		"\tif row == nil || row[0] == nil {\n" +
-		"\t\treturn nil, errors.New(\"no such edge\")\n" +
+		"\t\treturn nil, nil\n" +
 		"\t}\n" +
 		"\tid := row[0].(string)\n" +
 		"\n" +
@@ -1053,7 +1052,7 @@ func GetEdgeGetByIDsStr(s cg.Schema, e cg.EdgeStruct) string {
 		"\t\trow, err = q.GenOne(conn)\n" +
 		"\t\t// Try a new connection\n" +
 		"\t\ttime.Sleep(time.Millisecond * constants.LogicRetryWait)\n" +
-		"\t\tconn.Close()\n" +
+		"\t\tconn.Refresh()\n" +
 		"\t}\n" +
 		"\tif err != nil {\n" +
 		"\t\treturn nil, err\n" +
@@ -1115,7 +1114,7 @@ func GetEdgeGetByIDsBatcherStr(s cg.Schema, e cg.EdgeStruct) string {
 		"\t\treturn nil, err\n" +
 		"\t}\n" +
 		"\tif row == nil || row[0] == nil {\n" +
-		"\t\treturn nil, errors.New(\"no such edge\")\n" +
+		"\t\treturn nil, nil\n" +
 		"\t}\n" +
 		"\tid := row[0].(string)\n" +
 		"\n" +
@@ -1255,7 +1254,7 @@ func GetUpdateEdgeGetByIDStr(s cg.Schema, e cg.EdgeStruct) string {
 		"\t\treturn nil, err\n" +
 		"\t}\n" +
 		"\tif row == nil || row[0] == nil || row[1] == nil {\n" +
-		"\t\treturn nil, errors.New(\"no such edges\")\n" +
+		"\t\treturn nil, nil\n" +
 		"\t}\n" +
 		"\t{{.FromVar}} := row[0].(string)\n" +
 		"\t{{.ToVar}} := row[1].(string)\n" +
@@ -1337,7 +1336,7 @@ func GetUpdateEdgeGetByIDsStr(s cg.Schema, e cg.EdgeStruct) string {
 		"\t\treturn nil, err\n" +
 		"\t}\n" +
 		"\tif row == nil || row[0] == nil {\n" +
-		"\t\treturn nil, errors.New(\"no such edge\")\n" +
+		"\t\treturn nil, nil\n" +
 		"\t}\n" +
 		"\tid := row[0].(string)\n" +
 		"\n" +
@@ -1357,7 +1356,7 @@ func GetUpdateEdgeGetByIDsStr(s cg.Schema, e cg.EdgeStruct) string {
 		"\t\trow2, _, err = q.Gen(conn)\n" +
 		"\t\t// Try a new connection\n" +
 		"\t\ttime.Sleep(time.Millisecond * constants.LogicRetryWait)\n" +
-		"\t\tconn.Close()\n" +
+		"\t\tconn.Refresh()\n" +
 		"\t}\n" +
 		"\tif err != nil {\n" +
 		"\t\treturn nil, err\n" +
@@ -1410,7 +1409,7 @@ func GetDeleteEdgeByIDStr(s cg.Schema, e cg.EdgeStruct) string {
 		"\t\treturn err\n" +
 		"\t}\n" +
 		"\tif row == nil || row[0] == nil || row[1] == nil {\n" +
-		"\t\treturn errors.New(\"no such edges\")\n" +
+		"\t\treturn nil\n" +
 		"\t}\n" +
 		"\t{{.FromIDVar}} := row[0].(string)\n" +
 		"\t{{.ToIDVar}} := row[1].(string)\n" +
@@ -1437,8 +1436,7 @@ func GetDeleteEdgeByIDStr(s cg.Schema, e cg.EdgeStruct) string {
 		"\tif err != nil {\n" +
 		"\t\t return err\n" +
 		"\t}\n" +
-		"\tif val, ok := res.Metadata()[\"result_available_after\"]; ok && " +
-		"val.(int64) >= 0 {\n" +
+		"\tif _, ok := res.Metadata()[\"result_consumed_after\"]; ok {\n" +
 		"\t\treturn nil\n" +
 		"\t}\n" +
 		"\t return errors.New(\"could not delete {{.Name}}: \" + id)\n" +
@@ -1501,12 +1499,11 @@ func GetDeleteEdgeByIDsStr(s cg.Schema, e cg.EdgeStruct) string {
 		"\tif err != nil {\n" +
 		"\t\t return err\n" +
 		"\t}\n" +
-		"\tif val, ok := res.Metadata()[\"result_available_after\"]; ok && " +
-		"val.(int64) >= 0 {\n" +
+		"\tif _, ok := res.Metadata()[\"result_consumed_after\"]; ok {\n" +
 		"\t\treturn nil\n" +
 		"\t}\n" +
 		"\t return errors.New(\"could not delete {{.Name}}: \" + {{.FromIDVar}} " +
-		" + \"-\" + {{.ToIDVar}})\n" +
+		" + \":\" + {{.ToIDVar}})\n" +
 		"}\n"
 	return cg.ExecTemplate(template, "edge_delete_by_ids", data, nil)
 }
