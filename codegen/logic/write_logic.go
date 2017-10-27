@@ -679,7 +679,7 @@ func GetDeleteNodeByIDStr(s cg.Schema) string {
 		"\tif err != nil {\n" +
 		"\t\t return err\n" +
 		"\t}\n" +
-		"\tif _, ok := res.Metadata()[\"result_available_after\"]; ok {\n" +
+		"\tif _, ok := res.Metadata()[\"result_consumed_after\"]; ok {\n" +
 		"\t\treturn nil\n" +
 		"\t}\n" +
 		"\t return errors.New(\"could not delete {{.Name}}: \" + id)\n" +
