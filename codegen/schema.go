@@ -12,4 +12,5 @@ type Schema interface {
 	GetEdgePointers() map[string]EdgeStruct
 	AddEdgePointer(e EdgeStruct)
 	GetDeletionPrivacy() privacy.Policy
+	GetGraphQLNode() *GraphQLNode
 }

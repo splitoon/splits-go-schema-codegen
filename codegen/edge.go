@@ -19,6 +19,7 @@ type EdgeStruct struct {
 	ReversePrivacy  privacy.Policy
 	WritePrivacy    privacy.Policy
 	DeletionPrivacy privacy.Policy
+	GQLEdge         *GraphQLEdge
 }
 
 // Edge constructor.
@@ -34,6 +35,7 @@ func Edge() *EdgeStruct {
 		Privacy:         privacy.PolicyStruct{},
 		ReversePrivacy:  privacy.PolicyStruct{},
 		DeletionPrivacy: privacy.PolicyStruct{},
+		GQLEdge:         nil,
 	}
 }
 
@@ -97,6 +99,12 @@ func (es *EdgeStruct) SetDeletionPrivacy(pp privacy.Policy) *EdgeStruct {
 	return es
 }
 
+// SetGQLEdge is the to graphql edge setter for an edge.
+func (es *EdgeStruct) SetGQLEdge(gqlEdge *GraphQLEdge) *EdgeStruct {
+	es.GQLEdge = gqlEdge
+	return es
+}
+
 // EdgeFieldStruct holds the internal representation of a schema edge field.
 type EdgeFieldStruct struct {
 	Name          string    // Name of the property in neo4j (under_scored)
@@ -109,6 +117,7 @@ type EdgeFieldStruct struct {
 	Privacy       privacy.Policy
 	WritePrivacy  privacy.Policy
 	RWritePrivacy privacy.Policy
+	GQLField      *GraphQLField
 }
 
 // EdgeField constructor.
@@ -124,6 +133,7 @@ func EdgeField() *EdgeFieldStruct {
 		Privacy:       privacy.PolicyStruct{},
 		WritePrivacy:  privacy.PolicyStruct{},
 		RWritePrivacy: privacy.PolicyStruct{},
+		GQLField:      nil,
 	}
 }
 
@@ -182,5 +192,11 @@ func (es *EdgeFieldStruct) SetWritePrivacy(
 	pp privacy.Policy,
 ) *EdgeFieldStruct {
 	es.WritePrivacy = pp
+	return es
+}
+
+// SetGQLField is the to graphql field setter for an edge field.
+func (es *EdgeFieldStruct) SetGQLField(gqlField *GraphQLField) *EdgeFieldStruct {
+	es.GQLField = gqlField
 	return es
 }

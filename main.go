@@ -44,6 +44,14 @@ func main() {
 		fmt.Println("FORCE FLAG IS SET")
 	}
 
+	// Add edge pointers for the schemas
+	for _, s := range schemas {
+		for _, e := range s.GetEdges() {
+			e.ToNode.AddEdgePointer(e)
+		}
+	}
+
 	generateDBCode(mergeFlag, forceFlag)
 	generateLogicCode(mergeFlag, forceFlag)
+	generateGraphQLCode(mergeFlag, forceFlag)
 }

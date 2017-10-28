@@ -75,7 +75,7 @@ func WriteSchemaLogicNode(
 	return "// @SignedSource (" + signature + ")\n" + string(res)
 }
 
-// WriteSchemaLogicEdge writes the logic for a n edge.
+// WriteSchemaLogicEdge writes the logic for an edge.
 func WriteSchemaLogicEdge(
 	s cg.Schema,
 	e cg.EdgeStruct,
@@ -507,6 +507,9 @@ func GetNodeConnectedNodesStr(s cg.Schema) string {
 		"\tbatcher := new(util.LogicGetWrapper)\n" +
 		"\tbatcher.Query = &q.Query\n" +
 		"\tbatcher.EvalAuth = func(row []interface{}) []interface{} {\n" +
+		"\t\tif len(row) == 0 {\n" +
+		"\t\t\treturn []interface{}{[]interface{}{}}\n" +
+		"\t\t}\n" +
 		"\t\treturn row\n" +
 		"\t}\n" +
 		"\treturn batcher, nil\n" +

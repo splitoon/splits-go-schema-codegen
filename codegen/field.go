@@ -17,6 +17,7 @@ type FieldStruct struct {
 	Indexed      bool      // Whether the field should have an index on it
 	Privacy      privacy.Policy
 	WritePrivacy privacy.Policy
+	GQLField     *GraphQLField
 }
 
 // Field constructor.
@@ -31,6 +32,7 @@ func Field() *FieldStruct {
 		Indexed:      false,
 		Privacy:      privacy.PolicyStruct{},
 		WritePrivacy: privacy.PolicyStruct{},
+		GQLField:     nil,
 	}
 }
 
@@ -85,5 +87,11 @@ func (fs *FieldStruct) SetPrivacy(pp privacy.Policy) *FieldStruct {
 // SetWritePrivacy is the privacy setter for writing a node field.
 func (fs *FieldStruct) SetWritePrivacy(pp privacy.Policy) *FieldStruct {
 	fs.WritePrivacy = pp
+	return fs
+}
+
+// SetGQLField is the graphql field setter for hte node field.
+func (fs *FieldStruct) SetGQLField(gqlField *GraphQLField) *FieldStruct {
+	fs.GQLField = gqlField
 	return fs
 }
