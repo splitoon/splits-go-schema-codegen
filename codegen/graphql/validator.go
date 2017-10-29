@@ -96,7 +96,7 @@ func ValidateGraphQLSchemas(
 			filePath := destination
 			content, err := ioutil.ReadFile(filePath)
 			if err != nil {
-				return manualParts, errors.New("Cannot read file: " + filePath)
+				continue
 			}
 			manualPiece := cg.ExtractManualSections(string(content))
 			manualParts[filePath] = manualPiece

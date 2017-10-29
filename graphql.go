@@ -63,7 +63,7 @@ func generateGraphQLCode(mergeFlag bool, forceFlag bool) {
 		return
 	}
 	destination := os.Args[1] + "/"
-	packageName := "graphql_auto"
+	packageName := "graphql"
 
 	// Validate the schemas
 	manualParts, err := graphql.ValidateGraphQLSchemas(schemas, packageName,

@@ -83,7 +83,7 @@ func GetSchemaImportStr(manualPart string) string {
 		ManualPart: manualPart,
 	}
 	template := "import (\n" +
-		"\t\"splits-go-api/api/graphql_auto/resolvers\"\n" +
+		"\t\"splits-go-api/api/graphql/resolvers\"\n" +
 		"\n" +
 		"\tgraphql \"github.com/neelance/graphql-go\"\n" +
 		"\n" +
@@ -143,6 +143,7 @@ func GetSchemaStringStr(s cg.GraphQLSchema) string {
 		"\n" +
 		"schema {\n" +
 		"\tquery: Query\n" +
+		"\tmutation: Mutation\n" +
 		"}\n" +
 		"\n" +
 		"# The Query type represents all the entry points into the graph.\n" +
