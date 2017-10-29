@@ -509,6 +509,8 @@ func GetNodeConnectedNodesStr(s cg.Schema) string {
 		"\tbatcher.EvalAuth = func(row []interface{}) []interface{} {\n" +
 		"\t\tif len(row) == 0 {\n" +
 		"\t\t\treturn []interface{}{[]interface{}{}}\n" +
+		"\t\t} else if len(row) == 1 {\n" +
+		"\t\t\treturn []interface{}{[]interface{}{row[0]}}\n" +
 		"\t\t}\n" +
 		"\t\treturn row\n" +
 		"\t}\n" +
