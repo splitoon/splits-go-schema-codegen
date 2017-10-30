@@ -65,6 +65,7 @@ func GetAutogenTestImportStr() string {
 	}{
 		Imports: []string{
 			"p \"splits-go-api/db/models/predicates\"",
+			"\"math/rand\"",
 			"\"splits-go-api/testingutil\"",
 			"\"testing\"",
 		},
@@ -230,7 +231,7 @@ func GetAutogenEdgeTests(schemas []cg.Schema) string {
 		"\tif err != nil {\n" +
 		"\t\tt.Fatal(\"can not clear neo4j graph\")\n" +
 		"\t}\n" +
-		"\tplaceholderID := \"testID\"\n" +
+		"\tplaceholderID := \"testID\" + string(rand.Int())\n" +
 		"\t\n" +
 		"\t// Set up the nodes\n" +
 		"\tfm := {{.FromNode.GetName}}Mutator(placeholderID)\n" +
