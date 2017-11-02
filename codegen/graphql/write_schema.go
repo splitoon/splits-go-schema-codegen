@@ -126,12 +126,23 @@ func GetSchemaParseSchemaStr() string {
 
 // GetSchemaStringStr returns the string form of the graphql schema.
 func GetSchemaStringStr(s cg.GraphQLSchema) string {
+
+	edges := []cg.GraphQLEdge{}
+	edgeMap := map[string]bool{}
+	for _, e := range s.Edges {
+		name := e.From + e.TotalName + e.To
+		if _, ok := edgeMap[name]; !ok {
+			edges = append(edges, e)
+			edgeMap[name] = true
+		}
+	}
+
 	data := struct {
 		Nodes []cg.GraphQLNode
 		Edges []cg.GraphQLEdge
 	}{
 		Nodes: s.Nodes,
-		Edges: s.Edges,
+		Edges: edges,
 	}
 	funcMap := t.FuncMap{
 		"ToLower": strings.ToLower,
@@ -149,7 +160,7 @@ func GetSchemaStringStr(s cg.GraphQLSchema) string {
 		"# The Query type represents all the entry points into the graph.\n" +
 		"type Query {\n" +
 		"\tnode(id: ID!): Node\n" +
-		"\tviewer(): User\n" +
+		"\tviewer(id: ID): User\n" +
 		"{{range .Nodes}}" +
 		"\t{{.Name | ToLower}}(id: ID!): {{.Name}}\n" +
 		"{{end}}" +
