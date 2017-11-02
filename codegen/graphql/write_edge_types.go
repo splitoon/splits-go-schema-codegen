@@ -262,7 +262,19 @@ func GetGQLEdgeEdgeResolverStr(e cg.GraphQLEdge) string {
 		"\tif val == nil {\n" +
 		"\t\treturn nil, nil\n" +
 		"\t}\n" +
+		"{{if eq .CodeType \"float64\"}}" +
+		"\tvar res float64\n" +
+		"\tswitch v := val.(type) {\n" +
+		"\tcase float64:\n" +
+		"\t\tres = v\n" +
+		"\tcase int64:\n" +
+		"\t\tres = float64(v)\n" +
+		"\t\tdefault:\n" +
+		"\t\treturn nil, errors.New(\"invalid float64 type casting\")\n" +
+		"\t}\n" +
+		"{{else}}" +
 		"\tres := val.({{.CodeType}})\n" +
+		"{{end}}" +
 		"\treturn &res, nil\n" +
 		"}\n" +
 		"\n" +

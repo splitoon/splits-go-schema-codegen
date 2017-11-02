@@ -149,6 +149,7 @@ func GetSchemaStringStr(s cg.GraphQLSchema) string {
 		"# The Query type represents all the entry points into the graph.\n" +
 		"type Query {\n" +
 		"\tnode(id: ID!): Node\n" +
+		"\tviewer(): User\n" +
 		"{{range .Nodes}}" +
 		"\t{{.Name | ToLower}}(id: ID!): {{.Name}}\n" +
 		"{{end}}" +
