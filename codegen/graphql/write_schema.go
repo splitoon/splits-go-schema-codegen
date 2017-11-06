@@ -160,7 +160,7 @@ func GetSchemaStringStr(s cg.GraphQLSchema) string {
 		"# The Query type represents all the entry points into the graph.\n" +
 		"type Query {\n" +
 		"\tnode(id: ID!): Node\n" +
-		"\tviewer(id: ID): User\n" +
+		"\tviewer: User\n" +
 		"{{range .Nodes}}" +
 		"\t{{.Name | ToLower}}(id: ID!): {{.Name}}\n" +
 		"{{end}}" +
@@ -210,6 +210,7 @@ func GetSchemaStringStr(s cg.GraphQLSchema) string {
 		"\tstartCursor: ID\n" +
 		"\tendCursor: ID\n" +
 		"\thasNextPage: Boolean!\n" +
+		"\thasPreviousPage: Boolean!\n" +
 		"}\n" +
 		"` + resolvers.MutationSchema\n"
 	return cg.ExecTemplate(template, "schema_string", data, funcMap)
