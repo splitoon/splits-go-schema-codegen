@@ -405,30 +405,58 @@ func GetNodeConnectedNodesStr(s cg.Schema) string {
 		Name      string
 		QueryName string
 		Privacy   privacy.Policy
+		Fields    []cg.FieldStruct
+		OrderBy   string
 	}
 
 	// Extract the edge name to the node name
 	edges := map[string]NamePrivacyPair{}
 	for _, e := range s.GetEdges() {
+		var orderBy string
 		if e.ToNode.GetName() == s.GetName() { // group->user
+			if e.GQLEdge != nil {
+				orderBy = e.GQLEdge.ReverseOrderBy
+			}
 			edges[e.CodeName] = NamePrivacyPair{e.BackwardsName,
 				e.FromNode.GetName(),
-				e.ReversePrivacy}
+				e.ReversePrivacy,
+				e.FromNode.GetFields(),
+				orderBy,
+			}
 		} else if e.FromNode.GetName() == s.GetName() {
+			if e.GQLEdge != nil {
+				orderBy = e.GQLEdge.OrderBy
+			}
 			edges[e.CodeName] = NamePrivacyPair{e.ForwardsName,
 				e.ToNode.GetName(),
-				e.Privacy}
+				e.Privacy,
+				e.ToNode.GetFields(),
+				orderBy,
+			}
 		}
 	}
 	for _, e := range s.GetEdgePointers() {
+		var orderBy string
 		if e.ToNode.GetName() == s.GetName() { // group->user
+			if e.GQLEdge != nil {
+				orderBy = e.GQLEdge.ReverseOrderBy
+			}
 			edges[e.CodeName] = NamePrivacyPair{e.BackwardsName,
 				e.FromNode.GetName(),
-				e.ReversePrivacy}
+				e.ReversePrivacy,
+				e.FromNode.GetFields(),
+				orderBy,
+			}
 		} else if e.FromNode.GetName() == s.GetName() {
+			if e.GQLEdge != nil {
+				orderBy = e.GQLEdge.OrderBy
+			}
 			edges[e.CodeName] = NamePrivacyPair{e.ForwardsName,
 				e.ToNode.GetName(),
-				e.Privacy}
+				e.Privacy,
+				e.ToNode.GetFields(),
+				orderBy,
+			}
 		}
 	}
 
@@ -485,6 +513,7 @@ func GetNodeConnectedNodesStr(s cg.Schema) string {
 		"\tvc contexts.ViewerContext,\n" +
 		"\tparams context.Context,\n" +
 		"\tid string,\n" +
+		"\torderBy []p.OrderClauseStruct,\n" +
 		") (*util.LogicGetWrapper, error) {\n" +
 		"\n" +
 		"\t// Check auth\n" +
@@ -503,6 +532,18 @@ func GetNodeConnectedNodesStr(s cg.Schema) string {
 		"\t\tQuery{{$edgeName}}().\n" +
 		"\t\tQuery{{$value.QueryName}}().\n" +
 		"\t\tReturnID()\n" +
+		"\tfor _, field := range orderBy {\n" +
+		"\t\tswitch f := field.Field; f {\n" +
+		"{{range .Fields}}" +
+		"{{if .CanOrderBy}}" +
+		"\t\tcase \"{{.Name}}\":\n" +
+		"\t\t\tq = q.OrderBy{{.CodeName}}(field.Descending)\n" +
+		"{{end}}" +
+		"{{end}}" +
+		"\t\tdefault:\n" +
+		"\t\t\treturn nil, errors.New(\"cannot order by field: \" + f)\n" +
+		"\t\t}\n" +
+		"\t}\n" +
 		"\n" +
 		"\tbatcher := new(util.LogicGetWrapper)\n" +
 		"\tbatcher.Query = &q.Query\n" +

@@ -78,6 +78,7 @@ func GetGQLNodeResolverImportStr(manualPart string) string {
 		ManualPart: manualPart,
 	}
 	template := "import (\n" +
+		"\t\"bytes\"\n" +
 		"\t\"context\"\n" +
 		"\t\"splits-go-api/constants\"\n" +
 		"\t\"splits-go-api/log\"\n" +
@@ -291,10 +292,21 @@ func GetGQLNodeEdgeResolverStr(n cg.GraphQLNode) string {
 		"ConnectionArgs,\n) " +
 		"(*{{.FromCodeName}}To{{.ToCodeName}}ConnectionResolver, error ) {\n" +
 		"\tid := {{$.Var}}.id\n" +
+		"\tvar orderBy bytes.Buffer\n" +
+		"\tif args.OrderBy != nil {\n" +
+		"\t\tfor _, s := range *args.OrderBy {\n" +
+		"\t\t\torderBy.WriteString(s.Field)\n" +
+		"\t\t\tif s.Desc {\n" +
+		"\t\t\t\torderBy.WriteString(\"@desc#\")\n" +
+		"\t\t\t} else {\n" +
+		"\t\t\t\torderBy.WriteString(\"@asc#\")\n" +
+		"\t\t\t}\n" +
+		"\t\t}\n" +
+		"\t}\n" +
 		"\tdl := ctx.Value(constants.DataloaderKey).(*dataloader.Loader)\n" +
 		"\tthunk := dl.Load(ctx, muxField(\"{{.FromCodeName}}" +
 		"{{.ToCodeName}}\", id, " +
-		"\"{{.FieldName}}\"))\n" +
+		"orderBy.String()))\n" +
 		"\tpreIDList, err := thunk()\n" +
 		"\tif err != nil {\n" +
 		"\t\treturn nil, err\n" +

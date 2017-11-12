@@ -181,7 +181,8 @@ func GetSchemaStringStr(s cg.GraphQLSchema) string {
 		"{{end}}" +
 		"{{range .Edges}}" +
 		"\n\t# {{.Description}}\n" +
-		"\t{{.FieldName}}(first: Int, after: ID): {{.From}}To{{.To}}Connection!\n" +
+		"\t{{.FieldName}}(first: Int, after: ID, orderBy: [OrderBy!]): " +
+		"{{.From}}To{{.To}}Connection!\n" +
 		"{{end}}" +
 		"}\n" +
 		"{{end}}" +
@@ -204,6 +205,11 @@ func GetSchemaStringStr(s cg.GraphQLSchema) string {
 		"{{end}}" +
 		"}\n" +
 		"{{end}}" +
+		"\n" +
+		"input OrderBy {\n" +
+		"\tfield: String!\n" +
+		"\tdesc: Boolean!\n" +
+		"}\n" +
 		"\n" +
 		"# Information for paginating connections.\n" +
 		"type PageInfo {\n" +

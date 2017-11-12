@@ -28,6 +28,8 @@ type GraphQLEdge struct {
 	IncludeReverse          bool
 	IsReverse               bool
 	EdgeCodeName            string
+	OrderBy                 string
+	ReverseOrderBy          string
 }
 
 // GraphQLField wrapper around a graphql field.

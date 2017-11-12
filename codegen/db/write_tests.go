@@ -119,7 +119,7 @@ func GetAutogenNodeTests(schemas []cg.Schema) string {
 		"{{range .GetFields}}.\n\t\tWhere{{.CodeName}}(p.Equals" +
 		"({{.ExampleValue}})){{end}}" +
 		"{{range .GetFields}}.\n\t\tReturn{{.CodeName}}(){{end}}" +
-		"{{range .GetFields}}.\n\t\tOrderBy{{.CodeName}}(){{end}}\n" +
+		"{{range .GetFields}}.\n\t\tOrderBy{{.CodeName}}(true){{end}}\n" +
 		"\t\n" +
 		"\td1 := {{.GetName}}Deleter()" +
 		"{{range .GetFields}}.\n\t\tWhere{{.CodeName}}(p.Equals" +
@@ -258,7 +258,7 @@ func GetAutogenEdgeTests(schemas []cg.Schema) string {
 		"{{range .Fields}}.\n\t\tWhere{{.CodeName}}(p.Equals" +
 		"({{.ExampleValue}})){{end}}" +
 		"{{range .Fields}}.\n\t\tReturn{{.CodeName}}(){{end}}" +
-		"{{range .Fields}}.\n\t\tOrderBy{{.CodeName}}(){{end}}.\n" +
+		"{{range .Fields}}.\n\t\tOrderBy{{.CodeName}}(true){{end}}.\n" +
 		"\t\tQuery{{.FromNode.GetName}}().\n" +
 		"\t\tWhereID(p.Equals(\"\"))\n" +
 		"\t\n" +

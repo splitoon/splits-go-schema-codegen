@@ -343,9 +343,10 @@ func GetNodeQueryOrderStr(s cg.Schema) string {
 
 	template := "{{range .Fields}}" +
 		"// OrderBy{{.CodeName}} is the order clause for {{.CodeName}}.\n" +
-		"func ({{$.VarName}} *{{$.Name}}Q) OrderBy{{.CodeName}}() *{{$.Name}}Q {\n" +
+		"func ({{$.VarName}} *{{$.Name}}Q) OrderBy{{.CodeName}}(desc bool) " +
+		"*{{$.Name}}Q {\n" +
 		"{{$.VarName}}.Order = append({{$.VarName}}.Order, p.OrderClause" +
-		"(\"{{.Name}}\"))\n" +
+		"(\"{{.Name}}\", desc))\n" +
 		"return {{$.VarName}}\n" +
 		"}\n\n" +
 		"{{end}}"
@@ -691,9 +692,9 @@ func GetEdgeQueryOrderStr(e cg.EdgeStruct) string {
 
 	template := "{{range .Fields}}" +
 		"// OrderBy{{.CodeName}} is the return clause for {{.CodeName}}\n" +
-		"func ({{$.VarName}} *{{$.Name}}Q) OrderBy{{.CodeName}}() *{{$.Name}}Q {\n" +
+		"func ({{$.VarName}} *{{$.Name}}Q) OrderBy{{.CodeName}}(desc bool) *{{$.Name}}Q {\n" +
 		"{{$.VarName}}.Order = append({{$.VarName}}.Order, p.OrderClause" +
-		"(\"{{.Name}}\"))\n" +
+		"(\"{{.Name}}\", desc))\n" +
 		"return {{$.VarName}}\n" +
 		"}\n\n" +
 		"{{end}}"

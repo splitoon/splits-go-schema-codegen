@@ -41,6 +41,7 @@ func prepGraphQLSchema() (cg.GraphQLSchema, error) {
 					TotalName:        e.TotalName,
 					IsReverse:        true,
 					EdgeCodeName:     e.EdgeCodeName,
+					OrderBy:          e.ReverseOrderBy,
 				}
 				oppositeNode, ok := oppositeNodes[e.To]
 				if !ok {

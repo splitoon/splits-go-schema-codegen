@@ -18,6 +18,7 @@ type FieldStruct struct {
 	Privacy      privacy.Policy
 	WritePrivacy privacy.Policy
 	GQLField     *GraphQLField
+	CanOrderBy   bool
 }
 
 // Field constructor.
@@ -33,6 +34,7 @@ func Field() *FieldStruct {
 		Privacy:      privacy.PolicyStruct{},
 		WritePrivacy: privacy.PolicyStruct{},
 		GQLField:     nil,
+		CanOrderBy:   false,
 	}
 }
 
@@ -93,5 +95,11 @@ func (fs *FieldStruct) SetWritePrivacy(pp privacy.Policy) *FieldStruct {
 // SetGQLField is the graphql field setter for hte node field.
 func (fs *FieldStruct) SetGQLField(gqlField *GraphQLField) *FieldStruct {
 	fs.GQLField = gqlField
+	return fs
+}
+
+// SetCanOrderBy is the can order by setter for ordering edges.
+func (fs *FieldStruct) SetCanOrderBy(canOrderBy bool) *FieldStruct {
+	fs.CanOrderBy = canOrderBy
 	return fs
 }

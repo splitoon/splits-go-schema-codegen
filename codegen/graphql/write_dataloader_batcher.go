@@ -82,6 +82,7 @@ func GetDLBatcherImportStr(manualPart string) string {
 		"\t\"splits-go-api/auth/contexts\"\n" +
 		"\t\"splits-go-api/constants\"\n" +
 		"\t\"splits-go-api/db\"\n" +
+		"\tp \"splits-go-api/db/models/predicates\"\n" +
 		"\t\"splits-go-api/logic\"\n" +
 		"\t\"splits-go-api/logic/util\"\n" +
 		"\t\"strings\"\n" +
@@ -142,7 +143,22 @@ func GetDLBatcherBatcherStr(s cg.GraphQLSchema, manualPart string) string {
 		Edges:      edges,
 		ManualPart: manualPart,
 	}
-	template := "// Generates the batchers to be batched later.\n" +
+	template := "// Parse a connection's fields and get the order by clauses.\n" +
+		"func parseConnectionOrderBy(fields []string) []p.OrderClauseStruct {\n" +
+		"\torderClauses := []p.OrderClauseStruct{}\n" +
+		"\tf := strings.Split(fields[0], \"#\")\n" +
+		"\tfor _, field := range f {\n" +
+		"\t\tt := strings.Split(field, \"@\")\n" +
+		"\t\tif len(t) != 2 {\n" +
+		"\t\t\tcontinue\n" +
+		"\t\t}\n" +
+		"\t\tclause := p.OrderClause(t[0], t[1] == \"desc\")\n" +
+		"\t\torderClauses = append(orderClauses, clause)\n" +
+		"\t}\n" +
+		"\treturn orderClauses\n" +
+		"}\n" +
+		"\n" +
+		"// Generates the batchers to be batched later.\n" +
 		"func genBatchedQueries(\n" +
 		"\tctx context.Context,\n" +
 		"\tqueries map[string]map[string][]string,\n" +
@@ -186,9 +202,9 @@ func GetDLBatcherBatcherStr(s cg.GraphQLSchema, manualPart string) string {
 		"{{range .Edges}}" +
 		"\t\t\tcase \"{{.FromCodeName}}{{.ToCodeName}}\":\n" +
 		"\t\t\t\t{\n" +
+		"\t\t\t\t\torderBy := parseConnectionOrderBy(fields)\n" +
 		"\t\t\t\t\tb, err := logic.Get{{.FromCodeName}}{{.FieldResolveName}}" +
-		"Batcher(" +
-		"conn, vc, ctx, id)\n" +
+		"Batcher(conn, vc, ctx, id, orderBy)\n" +
 		"\t\t\t\t\tif err != nil {\n" +
 		"\t\t\t\t\t\taddFetchedErrors(kind, id, fields, err, fetchedData, " +
 		"fetchedErrs)\n" +

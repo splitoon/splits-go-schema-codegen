@@ -129,6 +129,7 @@ func GetGQLEdgeConnectionResolverStr(e cg.GraphQLEdge) string {
 		"type {{.FromCodeName}}To{{.ToCodeName}}ConnectionArgs struct {\n" +
 		"\tFirst *int32\n" +
 		"\tAfter *graphql.ID\n" +
+		"\tOrderBy *[]OrderBy\n" +
 		"}\n" +
 		"\n" +
 		"// {{.FromCodeName}}To{{.ToCodeName}}ConnectionResolver is the graphql " +
